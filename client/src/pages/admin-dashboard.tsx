@@ -66,17 +66,17 @@ export default function AdminDashboard() {
 
   const { data: bookings = [], isLoading: loadingBookings } =
     useQuery<Booking[]>({
-      queryKey: ["/api/admin/bookings", selectedDate],
+      queryKey: ["/admin/bookings", selectedDate],
     });
 
   const { data: costs = [], isLoading: loadingCosts } =
     useQuery<DailyCost[]>({
-      queryKey: ["/api/admin/costs", selectedDate],
+      queryKey: ["/admin/costs", selectedDate],
     });
 
   const addCostMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/admin/costs", {
+      const res = await apiRequest("POST", "/admin/costs", {
         tanggal: selectedDate,
         cost: parseInt(costAmount),
         keterangan: costDesc,
@@ -85,7 +85,7 @@ export default function AdminDashboard() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["/api/admin/costs", selectedDate],
+        queryKey: ["/admin/costs", selectedDate],
       });
       closeCostDialog();
       toast({ title: "Pengeluaran berhasil ditambahkan" });
@@ -102,7 +102,7 @@ export default function AdminDashboard() {
   const updateCostMutation = useMutation({
     mutationFn: async () => {
       if (!editingCost) return;
-      const res = await apiRequest("PATCH", `/api/admin/costs/${editingCost.id}`, {
+      const res = await apiRequest("PATCH", `/admin/costs/${editingCost.id}`, {
         cost: parseInt(costAmount),
         keterangan: costDesc,
       });
@@ -110,7 +110,7 @@ export default function AdminDashboard() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["/api/admin/costs", selectedDate],
+        queryKey: ["/admin/costs", selectedDate],
       });
       closeCostDialog();
       toast({ title: "Pengeluaran berhasil diperbarui" });
@@ -126,12 +126,12 @@ export default function AdminDashboard() {
 
   const deleteCostMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await apiRequest("DELETE", `/api/admin/costs/${id}`);
+      const res = await apiRequest("DELETE", `/admin/costs/${id}`);
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["/api/admin/costs", selectedDate],
+        queryKey: ["/admin/costs", selectedDate],
       });
       setDeleteCostTarget(null);
       toast({ title: "Pengeluaran berhasil dihapus" });

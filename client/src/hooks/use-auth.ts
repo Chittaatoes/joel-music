@@ -7,7 +7,7 @@ interface AdminUser {
 }
 
 async function fetchAdmin(): Promise<AdminUser | null> {
-  const response = await fetch(`${API_BASE}/api/admin/me`, {
+  const response = await fetch(`${API_BASE}/admin/me`, {
     credentials: "include",
   });
   if (response.status === 401) {
@@ -22,7 +22,7 @@ async function fetchAdmin(): Promise<AdminUser | null> {
 export function useAuth() {
   const queryClient = useQueryClient();
   const { data: user, isLoading } = useQuery<AdminUser | null>({
-    queryKey: ["/api/admin/me"],
+    queryKey: ["/admin/me"],
     queryFn: fetchAdmin,
     retry: false,
     staleTime: 1000 * 60 * 5,
@@ -30,7 +30,7 @@ export function useAuth() {
 
   const loginMutation = useMutation({
     mutationFn: async ({ username, password }: { username: string; password: string }) => {
-      const res = await fetch(`${API_BASE}/api/admin/login`, {
+      const res = await fetch(`${API_BASE}/admin/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -43,19 +43,19 @@ export function useAuth() {
       return res.json();
     },
     onSuccess: (data) => {
-      queryClient.setQueryData(["/api/admin/me"], data);
+      queryClient.setQueryData(["/admin/me"], data);
     },
   });
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      await fetch(`${API_BASE}/api/admin/logout`, {
+      await fetch(`${API_BASE}/admin/logout`, {
         method: "POST",
         credentials: "include",
       });
     },
     onSuccess: () => {
-      queryClient.setQueryData(["/api/admin/me"], null);
+      queryClient.setQueryData(["/admin/me"], null);
       window.location.href = "/admin";
     },
   });

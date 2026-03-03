@@ -88,7 +88,7 @@ export default function HistoryPage() {
 
     const bookingIds = items.map((i) => i.bookingId).filter(Boolean);
     if (bookingIds.length > 0) {
-      fetch(`${API_BASE}/api/bookings/status`, {
+      fetch(`${API_BASE}/bookings/status`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ bookingIds }),

@@ -177,7 +177,7 @@ export default function BookingFormPage() {
 
   const createBookingMutation = useMutation({
     mutationFn: async ({ formData, paymentMethod, buktiTransfer }: { formData: BookingFormValues; paymentMethod: string; buktiTransfer?: string }) => {
-      const res = await apiRequest("POST", "/api/bookings", {
+      const res = await apiRequest("POST", "/bookings", {
         namaBand: formData.namaBand,
         jumlahPerson: parseInt(formData.jumlahPerson),
         noWa: formData.noWa,
@@ -193,7 +193,7 @@ export default function BookingFormPage() {
     },
     onSuccess: (data) => {
       setBookingId(data.id);
-      queryClient.invalidateQueries({ queryKey: ["/api/bookings/schedule/" + tanggal] });
+      queryClient.invalidateQueries({ queryKey: ["/bookings/schedule/" + tanggal] });
     },
     onError: (error: Error) => {
       toast({
@@ -277,7 +277,7 @@ export default function BookingFormPage() {
     const values = form.getValues();
 
     // 1️⃣ BUAT BOOKING DULU
-    const bookingRes = await apiRequest("POST", "/api/bookings", {
+    const bookingRes = await apiRequest("POST", "/bookings", {
       namaBand: values.namaBand,
       jumlahPerson: parseInt(values.jumlahPerson),
       noWa: values.noWa,
@@ -292,7 +292,7 @@ export default function BookingFormPage() {
 
     const booking = await bookingRes.json();
 
-    queryClient.invalidateQueries({ queryKey: ["/api/bookings/schedule/" + tanggal] });
+    queryClient.invalidateQueries({ queryKey: ["/bookings/schedule/" + tanggal] });
 
     setBookingId(booking.id);
     setBookingCode(booking.bookingId || null);

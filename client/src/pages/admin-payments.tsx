@@ -102,7 +102,7 @@ export default function AdminPayments() {
 };
 
   const { data: bookings = [], isLoading } = useQuery<Booking[]>({
-    queryKey: ["/api/admin/bookings/all"],
+    queryKey: ["/admin/bookings/all"],
     refetchInterval: 30000,
   });
 
@@ -112,13 +112,13 @@ export default function AdminPayments() {
   const approveMutation = useMutation({
     mutationFn: async (id: string) => {
       setProcessingId(id);
-      const res = await apiRequest("POST", `/api/admin/bookings/${id}/approve`);
+      const res = await apiRequest("POST", `/admin/bookings/${id}/approve`);
       return res.json();
     },
     onMutate: async (id: string) => {
-      await queryClient.cancelQueries({ queryKey: ["/api/admin/bookings/all"] });
-      const previous = queryClient.getQueryData<Booking[]>(["/api/admin/bookings/all"]);
-      queryClient.setQueryData<Booking[]>(["/api/admin/bookings/all"], (old) =>
+      await queryClient.cancelQueries({ queryKey: ["/admin/bookings/all"] });
+      const previous = queryClient.getQueryData<Booking[]>(["/admin/bookings/all"]);
+      queryClient.setQueryData<Booking[]>(["/admin/bookings/all"], (old) =>
         old ? old.map((b) => b.id === id ? { ...b, status: "confirmed" } : b) : []
       );
       return { previous };
@@ -136,26 +136,26 @@ export default function AdminPayments() {
     },
     onError: (error: Error, _id, context) => {
       if (context?.previous) {
-        queryClient.setQueryData(["/api/admin/bookings/all"], context.previous);
+        queryClient.setQueryData(["/admin/bookings/all"], context.previous);
       }
       toast({ title: "Gagal approve booking", description: error.message, variant: "destructive" });
       setProcessingId(null);
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/bookings/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/admin/bookings/all"] });
     },
   });
 
   const rejectMutation = useMutation({
     mutationFn: async (id: string) => {
       setProcessingId(id);
-      const res = await apiRequest("POST", `/api/admin/bookings/${id}/reject`);
+      const res = await apiRequest("POST", `/admin/bookings/${id}/reject`);
       return res.json();
     },
     onMutate: async (id: string) => {
-      await queryClient.cancelQueries({ queryKey: ["/api/admin/bookings/all"] });
-      const previous = queryClient.getQueryData<Booking[]>(["/api/admin/bookings/all"]);
-      queryClient.setQueryData<Booking[]>(["/api/admin/bookings/all"], (old) =>
+      await queryClient.cancelQueries({ queryKey: ["/admin/bookings/all"] });
+      const previous = queryClient.getQueryData<Booking[]>(["/admin/bookings/all"]);
+      queryClient.setQueryData<Booking[]>(["/admin/bookings/all"], (old) =>
         old ? old.map((b) => b.id === id ? { ...b, status: "rejected" } : b) : []
       );
       return { previous };
@@ -173,25 +173,25 @@ export default function AdminPayments() {
     },
     onError: (error: Error, _id, context) => {
       if (context?.previous) {
-        queryClient.setQueryData(["/api/admin/bookings/all"], context.previous);
+        queryClient.setQueryData(["/admin/bookings/all"], context.previous);
       }
       toast({ title: "Gagal reject booking", description: error.message, variant: "destructive" });
       setProcessingId(null);
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/bookings/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/admin/bookings/all"] });
     },
   });
 
   const deleteBookingMutation = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest("DELETE", `/api/admin/bookings/${id}`);
+      await apiRequest("DELETE", `/admin/bookings/${id}`);
     },
     onMutate: async (id: string) => {
       setDeleteTarget(null);
-      await queryClient.cancelQueries({ queryKey: ["/api/admin/bookings/all"] });
-      const previous = queryClient.getQueryData<Booking[]>(["/api/admin/bookings/all"]);
-      queryClient.setQueryData<Booking[]>(["/api/admin/bookings/all"], (old) =>
+      await queryClient.cancelQueries({ queryKey: ["/admin/bookings/all"] });
+      const previous = queryClient.getQueryData<Booking[]>(["/admin/bookings/all"]);
+      queryClient.setQueryData<Booking[]>(["/admin/bookings/all"], (old) =>
         old ? old.filter((b) => b.id !== id) : []
       );
       return { previous };
@@ -201,12 +201,12 @@ export default function AdminPayments() {
     },
     onError: (error: Error, _id, context) => {
       if (context?.previous) {
-        queryClient.setQueryData(["/api/admin/bookings/all"], context.previous);
+        queryClient.setQueryData(["/admin/bookings/all"], context.previous);
       }
       toast({ title: "Gagal menghapus booking", description: error.message, variant: "destructive" });
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/bookings/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/admin/bookings/all"] });
     },
   });
 

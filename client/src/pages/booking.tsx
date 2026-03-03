@@ -105,7 +105,7 @@ export default function BookingPage() {
   const isCoverLagu = selectedLayanan === "cover_lagu";
 
   const { data: bookings = [], isLoading } = useQuery<Booking[]>({
-    queryKey: ["/api/bookings/schedule/" + dateStr],
+    queryKey: ["/bookings/schedule/" + dateStr],
     refetchInterval: 3000,
   });
 

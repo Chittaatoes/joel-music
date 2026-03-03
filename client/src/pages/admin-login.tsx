@@ -17,7 +17,7 @@ export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/admin/me`, { credentials: "include" })
+    fetch(`${API_BASE}/admin/me`, { credentials: "include" })
       .then((res) => {
         if (res.ok) {
           setLocation("/admin/dashboard");
@@ -32,7 +32,7 @@ export default function AdminLoginPage() {
     setLoading(true);
 
     try {
-      const res = await fetch(`${API_BASE}/api/admin/login`, {
+      const res = await fetch(`${API_BASE}/admin/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
