@@ -33,12 +33,8 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Booking } from "@shared/schema";
 
-function isIOSWebApp(): boolean {
-  const isIOS = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
-  const isStandalone =
-    (window.navigator as any).standalone === true ||
-    window.matchMedia("(display-mode: standalone)").matches;
-  return isIOS && isStandalone;
+function isIOS(): boolean {
+  return /iphone|ipad|ipod/i.test(window.navigator.userAgent);
 }
 
 function openWhatsAppIOS(url: string) {
@@ -127,7 +123,7 @@ export default function AdminPayments() {
       toast({ title: "Booking disetujui & invoice dibuat" });
       setProcessingId(null);
       if (data.whatsappUrl) {
-        if (isIOSWebApp()) {
+        if (isIOS()) {
           setIosWaUrl(data.whatsappUrl);
         } else {
           window.open(data.whatsappUrl, "_blank");
@@ -164,7 +160,7 @@ export default function AdminPayments() {
       toast({ title: "Booking ditolak" });
       setProcessingId(null);
       if (data.whatsappUrl) {
-        if (isIOSWebApp()) {
+        if (isIOS()) {
           setIosWaUrl(data.whatsappUrl);
         } else {
           window.open(data.whatsappUrl, "_blank");
@@ -255,7 +251,7 @@ export default function AdminPayments() {
       {iosWaUrl && (
         <Card className="p-4 space-y-2 border-emerald-500/30 bg-emerald-500/5">
           <p className="text-sm text-muted-foreground">
-            Untuk pengguna iPhone WebApp, silakan klik tombol di bawah untuk membuka WhatsApp
+            Silakan klik tombol di bawah untuk membuka WhatsApp
           </p>
           <Button
             className="w-full bg-emerald-600 hover:bg-emerald-700"

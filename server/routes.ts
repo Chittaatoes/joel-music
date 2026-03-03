@@ -126,12 +126,13 @@ function isRamadan(): boolean {
   return ramadanPeriods.some((p) => now >= p.start && now <= p.end);
 }
 
-function calculatePrice(service: string, durasi: number): number {
+function calculatePrice(service: string, durasi: number, withKeyboard = false): number {
   const liveRecordPrice = isRamadan() ? 80000 : 100000;
   switch (service) {
-    case "rehearsal":
-      if (durasi === 3) return 190000;
-      return durasi * 65000;
+    case "rehearsal": {
+      const base = durasi === 3 ? 190000 : durasi * 65000;
+      return base + (withKeyboard ? durasi * 10000 : 0);
+    }
     case "karaoke":
       if (durasi === 2) return 100000;
       return durasi * 55000;
@@ -248,14 +249,14 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Data tidak valid", errors: parsed.error.errors });
       }
 
-      const { tanggal, jamMulai, durasi, jenisLayanan } = parsed.data;
+      const { tanggal, jamMulai, durasi, jenisLayanan, withKeyboard } = parsed.data;
 
       const isAvailable = await storage.checkSlotAvailability(tanggal, jamMulai, durasi);
       if (!isAvailable) {
         return res.status(409).json({ message: "Slot waktu yang dipilih sudah tidak tersedia" });
       }
 
-      const total = calculatePrice(jenisLayanan, durasi);
+      const total = calculatePrice(jenisLayanan, durasi, withKeyboard);
 
       const dateParts = tanggal.split("-");
       const yy = dateParts[0].slice(2);
@@ -336,7 +337,9 @@ app.get("/api/admin/bookings/all", async (req, res) => {
 
       const protocol = req.headers["x-forwarded-proto"] || req.protocol || "https";
       const host = req.headers["x-forwarded-host"] || req.headers.host || "";
-      const fullInvoiceUrl = `${protocol}://${host}${invoiceUrl}`;
+      const fullInvoiceUrl = invoiceUrl.startsWith("http")
+        ? invoiceUrl
+        : `${protocol}://${host}${invoiceUrl}`;
 
       const message = `\u{1F3B5} JOEL MUSIC STUDIO\n\nHalo ${booking.namaBand} \u{1F44B}\n\nBooking kamu sudah dikonfirmasi \u2705\n\n\u{1F4CC} Booking ID: ${booking.bookingId || booking.id}\n\u{1F5D3}\uFE0F Tanggal: ${tanggalStr}\n\u23F0 Jam: ${jamStr}\n\u{1F3B8} Layanan: ${layananStr}\n\n\u{1F4B0} Total: Rp ${booking.total.toLocaleString("id-ID")}\nMetode Pembayaran: ${metodeStr}\n\n\u{1F9FE} Invoice:\n${fullInvoiceUrl}\n\nSilakan datang 10 menit sebelum jadwal \u{1F64F}\nTerima kasih!`;
 
