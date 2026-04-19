@@ -1177,6 +1177,33 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  app.get("/api/settings", async (_req, res) => {
+    try {
+      const minimalDP = await storage.getSetting("minimalDP");
+      res.json({ minimalDP: minimalDP ? parseInt(minimalDP) : 20000 });
+    } catch (error) {
+      res.status(500).json({ message: "Gagal mengambil pengaturan" });
+    }
+  });
+
+  app.patch("/api/admin/settings", async (req: any, res) => {
+    if (!requireAdmin(req, res)) return;
+    try {
+      const { minimalDP } = req.body;
+      if (minimalDP !== undefined) {
+        const val = parseInt(minimalDP);
+        if (isNaN(val) || val < 0) {
+          return res.status(400).json({ message: "Nilai minimal DP tidak valid" });
+        }
+        await storage.upsertSetting("minimalDP", String(val));
+      }
+      const updatedMinimalDP = await storage.getSetting("minimalDP");
+      res.json({ minimalDP: updatedMinimalDP ? parseInt(updatedMinimalDP) : 20000 });
+    } catch (error) {
+      res.status(500).json({ message: "Gagal menyimpan pengaturan" });
+    }
+  });
+
   app.get("/api/admin/push/vapid-key", (_req, res) => {
     res.json({ publicKey: process.env.VAPID_PUBLIC_KEY || "" });
   });
