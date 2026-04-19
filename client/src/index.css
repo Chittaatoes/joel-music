@@ -1,325 +1,315 @@
-import { useEffect, useState } from "react";
-import { useLocation, Link } from "wouter";
-import { useAuth } from "@/hooks/use-auth";
-import { useQuery } from "@tanstack/react-query";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarProvider,
-  SidebarTrigger,
-  SidebarHeader,
-} from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Skeleton } from "@/components/ui/skeleton";
-import { LayoutDashboard, CreditCard, LogOut, Settings, Images, Bell, BellOff } from "lucide-react";
-import { usePushNotification } from "@/hooks/use-push-notification";
-import { useToast } from "@/hooks/use-toast";
-import type { Booking } from "@shared/schema";
-const logoImage = "/images/logo.png";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-const MAIN_TABS = [
-  { id: "dashboard", label: "Dashboard",  icon: LayoutDashboard, url: "/admin/dashboard" },
-  { id: "payments",  label: "Pembayaran", icon: CreditCard,      url: "/admin/payments"  },
-  { id: "services",  label: "Layanan",    icon: Settings,        url: "/admin/services"  },
-  { id: "gallery",   label: "Galeri",     icon: Images,          url: "/admin/gallery"   },
-] as const;
+/* LIGHT MODE */
+:root {
+  --button-outline: rgba(0,0,0, .10);
+  --badge-outline: rgba(0,0,0, .05);
+  --opaque-button-border-intensity: -8;
+  --elevate-1: rgba(0,0,0, .03);
+  --elevate-2: rgba(0,0,0, .08);
+  --background: 0 0% 100%;
+  --foreground: 210 20% 10%;
+  --border: 200 10% 90%;
+  --card: 200 10% 97%;
+  --card-foreground: 210 20% 10%;
+  --card-border: 200 10% 93%;
+  --sidebar: 200 10% 95%;
+  --sidebar-foreground: 210 20% 10%;
+  --sidebar-border: 200 10% 90%;
+  --sidebar-primary: 187 80% 42%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 200 10% 90%;
+  --sidebar-accent-foreground: 210 20% 10%;
+  --sidebar-ring: 187 80% 42%;
+  --popover: 200 10% 95%;
+  --popover-foreground: 210 20% 10%;
+  --popover-border: 200 10% 88%;
+  --primary: 187 80% 42%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 200 10% 92%;
+  --secondary-foreground: 210 20% 10%;
+  --muted: 200 8% 91%;
+  --muted-foreground: 210 8% 45%;
+  --accent: 45 85% 55%;
+  --accent-foreground: 210 20% 10%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+  --input: 200 10% 80%;
+  --ring: 187 80% 42%;
+  --chart-1: 187 80% 42%;
+  --chart-2: 45 85% 55%;
+  --chart-3: 197 37% 24%;
+  --chart-4: 160 60% 45%;
+  --chart-5: 27 87% 67%;
+  --font-sans: Open Sans, sans-serif;
+  --font-serif: Georgia, serif;
+  --font-mono: Menlo, monospace;
+  --radius: .5rem;
+  --shadow-2xs: 0px 2px 0px 0px hsl(0 0% 0% / 0.00);
+  --shadow-xs: 0px 2px 0px 0px hsl(0 0% 0% / 0.00);
+  --shadow-sm: 0px 2px 0px 0px hsl(0 0% 0% / 0.00), 0px 1px 2px -1px hsl(0 0% 0% / 0.05);
+  --shadow: 0px 2px 0px 0px hsl(0 0% 0% / 0.00), 0px 1px 2px -1px hsl(0 0% 0% / 0.08);
+  --shadow-md: 0px 2px 0px 0px hsl(0 0% 0% / 0.00), 0px 2px 4px -1px hsl(0 0% 0% / 0.10);
+  --shadow-lg: 0px 2px 0px 0px hsl(0 0% 0% / 0.00), 0px 4px 6px -1px hsl(0 0% 0% / 0.10);
+  --shadow-xl: 0px 2px 0px 0px hsl(0 0% 0% / 0.00), 0px 8px 10px -1px hsl(0 0% 0% / 0.10);
+  --shadow-2xl: 0px 2px 0px 0px hsl(0 0% 0% / 0.00);
+  --tracking-normal: 0em;
+  --spacing: 0.25rem;
 
-const PILL_BG     = "rgba(255,255,255,0.94)";
-const PILL_SHADOW = "0 -1px 0 rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.06), inset 0 0 0 0.5px rgba(0,0,0,0.07)";
-const ACTIVE_BG   = "rgba(20,160,153,0.11)";
-const ICON_ACTIVE = "hsl(187,80%,38%)";
-const ICON_MUTED  = "rgba(90,105,110,0.55)";
+/* Fallback for older browsers */
+  --sidebar-primary-border: hsl(var(--sidebar-primary));
+  --sidebar-primary-border: hsl(from hsl(var(--sidebar-primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
 
-function MobileTabBar({
-  pendingCount,
-  onLogout,
-}: {
-  pendingCount: number;
-  onLogout: () => void;
-}) {
-  const [location, setLocation] = useLocation();
-  const [bouncing, setBouncing] = useState<string | null>(null);
-  const [logoutBouncing, setLogoutBouncing] = useState(false);
+  /* Fallback for older browsers */
+  --sidebar-accent-border: hsl(var(--sidebar-accent));
+  --sidebar-accent-border: hsl(from hsl(var(--sidebar-accent)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
 
-  const fire = (id: string, go: () => void) => {
-    setBouncing(id);
-    setTimeout(() => setBouncing(null), 480);
-    go();
-  };
+  /* Fallback for older browsers */
+  --primary-border: hsl(var(--primary));
+  --primary-border: hsl(from hsl(var(--primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
 
-  const fireLogout = () => {
-    setLogoutBouncing(true);
-    setTimeout(() => setLogoutBouncing(false), 480);
-    onLogout();
-  };
+  /* Fallback for older browsers */
+  --secondary-border: hsl(var(--secondary));
+  --secondary-border: hsl(from hsl(var(--secondary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
 
-  return (
-    <nav
-      className="fixed bottom-0 inset-x-0 z-50 md:hidden flex items-end gap-2.5 px-3 mb-3"
-      style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
-    >
-      {/* ── Main pill (4 tabs) ── */}
-      <div
-        className="flex-1 flex items-center rounded-[50px] px-1 py-1.5"
-        style={{ background: PILL_BG, boxShadow: PILL_SHADOW }}
-      >
-        {MAIN_TABS.map((tab) => {
-          const isActive = location === tab.url;
-          const isBouncing = bouncing === tab.id;
-          const badge = tab.id === "payments" ? pendingCount : 0;
+  /* Fallback for older browsers */
+  --muted-border: hsl(var(--muted));
+  --muted-border: hsl(from hsl(var(--muted)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
 
-          return (
-            <button
-              key={tab.id}
-              data-testid={`mobile-tab-${tab.id}`}
-              onClick={() => fire(tab.id, () => setLocation(tab.url))}
-              className="flex-1 flex flex-col items-center justify-center relative select-none"
-              style={{ WebkitTapHighlightColor: "transparent", minHeight: 50, touchAction: "manipulation" }}
-            >
-              {/* Active inner pill */}
-              <div
-                className="absolute inset-x-0.5 rounded-[44px] transition-all duration-200"
-                style={{
-                  top: -2,
-                  bottom: -2,
-                  background: isActive ? ACTIVE_BG : "transparent",
-                  opacity: isActive ? 1 : 0,
-                }}
-              />
+  /* Fallback for older browsers */
+  --accent-border: hsl(var(--accent));
+  --accent-border: hsl(from hsl(var(--accent)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
 
-              {/* Icon */}
-              <div
-                className={`relative z-10 ${isBouncing ? "tab-icon-bounce" : ""}`}
-                style={{ willChange: "transform" }}
-              >
-                <tab.icon
-                  style={{
-                    width: 22,
-                    height: 22,
-                    color: isActive ? ICON_ACTIVE : ICON_MUTED,
-                    strokeWidth: isActive ? 2.3 : 1.7,
-                    transition: "color 0.18s ease, stroke-width 0.18s ease",
-                  }}
-                />
-                {badge > 0 && (
-                  <span
-                    className="absolute flex items-center justify-center rounded-full bg-[#FF3B30] text-white"
-                    style={{
-                      top: -5, right: -6,
-                      minWidth: 15, height: 15,
-                      fontSize: 8, fontWeight: 700,
-                      lineHeight: 1, paddingInline: 2,
-                    }}
-                  >
-                    {badge > 99 ? "99+" : badge}
-                  </span>
-                )}
-              </div>
-
-              {/* Label */}
-              <span
-                className={`relative z-10 leading-none mt-1 ${isBouncing ? "tab-label-in" : ""}`}
-                style={{
-                  fontSize: 9.5,
-                  fontWeight: isActive ? 600 : 400,
-                  letterSpacing: 0.15,
-                  color: isActive ? ICON_ACTIVE : ICON_MUTED,
-                  transition: "color 0.18s ease",
-                }}
-              >
-                {tab.label}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* ── Standalone logout circle ── */}
-      <button
-        data-testid="mobile-tab-logout"
-        onClick={fireLogout}
-        className="flex items-center justify-center rounded-full select-none shrink-0"
-        style={{
-          width: 54,
-          height: 54,
-          background: PILL_BG,
-          boxShadow: PILL_SHADOW,
-          WebkitTapHighlightColor: "transparent",
-          touchAction: "manipulation",
-        }}
-      >
-        <div
-          className={logoutBouncing ? "tab-icon-bounce" : ""}
-          style={{ willChange: "transform" }}
-        >
-          <LogOut
-            style={{
-              width: 22,
-              height: 22,
-              color: ICON_MUTED,
-              strokeWidth: 1.7,
-            }}
-          />
-        </div>
-      </button>
-    </nav>
-  );
+  /* Fallback for older browsers */
+  --destructive-border: hsl(var(--destructive));
+  --destructive-border: hsl(from hsl(var(--destructive)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
 }
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const [location, setLocation] = useLocation();
-  const { user, isLoading, isAuthenticated, logout } = useAuth();
-  const { toast } = useToast();
-  const { isSupported, isSubscribed, isLoading: pushLoading, permission, subscribe, unsubscribe } = usePushNotification();
+.dark {
+  --button-outline: rgba(255,255,255, .10);
+  --badge-outline: rgba(255,255,255, .05);
+  --opaque-button-border-intensity: 9;
+  --elevate-1: rgba(255,255,255, .04);
+  --elevate-2: rgba(255,255,255, .09);
+  --background: 220 20% 6%;
+  --foreground: 0 0% 95%;
+  --border: 220 12% 14%;
+  --card: 220 18% 9%;
+  --card-foreground: 0 0% 95%;
+  --card-border: 220 12% 12%;
+  --sidebar: 220 18% 8%;
+  --sidebar-foreground: 0 0% 95%;
+  --sidebar-border: 220 12% 13%;
+  --sidebar-primary: 187 80% 48%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 220 12% 15%;
+  --sidebar-accent-foreground: 0 0% 95%;
+  --sidebar-ring: 187 80% 48%;
+  --popover: 220 18% 11%;
+  --popover-foreground: 0 0% 95%;
+  --popover-border: 220 12% 16%;
+  --primary: 187 80% 48%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 220 12% 16%;
+  --secondary-foreground: 0 0% 95%;
+  --muted: 220 10% 15%;
+  --muted-foreground: 210 8% 60%;
+  --accent: 45 85% 55%;
+  --accent-foreground: 220 20% 6%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+  --input: 220 12% 22%;
+  --ring: 187 80% 48%;
+  --chart-1: 187 80% 55%;
+  --chart-2: 45 85% 60%;
+  --chart-3: 197 37% 45%;
+  --chart-4: 160 60% 50%;
+  --chart-5: 27 87% 72%;
+  --shadow-2xs: 0px 2px 0px 0px hsl(0 0% 0% / 0.00);
+  --shadow-xs: 0px 2px 0px 0px hsl(0 0% 0% / 0.00);
+  --shadow-sm: 0px 2px 0px 0px hsl(0 0% 0% / 0.00), 0px 1px 2px -1px hsl(0 0% 0% / 0.00);
+  --shadow: 0px 2px 0px 0px hsl(0 0% 0% / 0.00), 0px 1px 2px -1px hsl(0 0% 0% / 0.00);
+  --shadow-md: 0px 2px 0px 0px hsl(0 0% 0% / 0.00), 0px 2px 4px -1px hsl(0 0% 0% / 0.00);
+  --shadow-lg: 0px 2px 0px 0px hsl(0 0% 0% / 0.00), 0px 4px 6px -1px hsl(0 0% 0% / 0.00);
+  --shadow-xl: 0px 2px 0px 0px hsl(0 0% 0% / 0.00), 0px 8px 10px -1px hsl(0 0% 0% / 0.00);
+  --shadow-2xl: 0px 2px 0px 0px hsl(0 0% 0% / 0.00);
 
-  const handleBellClick = async () => {
-    if (isSubscribed) {
-      await unsubscribe();
-      toast({ title: "Notifikasi dimatikan", description: "Kamu tidak akan menerima notifikasi booking baru." });
-    } else {
-      const ok = await subscribe();
-      if (ok) {
-        toast({ title: "Notifikasi aktif! 🔔", description: "Kamu akan menerima notifikasi setiap ada booking baru." });
-      } else if (permission === "denied") {
-        toast({ title: "Notifikasi diblokir", description: "Izinkan notifikasi di pengaturan browser kamu.", variant: "destructive" });
-      }
-    }
-  };
+/* Fallback for older browsers */
+  --sidebar-primary-border: hsl(var(--sidebar-primary));
+  --sidebar-primary-border: hsl(from hsl(var(--sidebar-primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
 
-  const { data: allBookings = [] } = useQuery<Booking[]>({
-    queryKey: ["/api/admin/bookings/all"],
-    queryFn: async () => {
-      const res = await fetch("/api/admin/bookings/all", { credentials: "include" });
-      if (!res.ok) throw new Error("Failed to fetch");
-      return res.json();
-    },
-    enabled: isAuthenticated,
-    refetchInterval: 60000,
-  });
+  /* Fallback for older browsers */
+  --sidebar-accent-border: hsl(var(--sidebar-accent));
+  --sidebar-accent-border: hsl(from hsl(var(--sidebar-accent)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
 
-  const pendingCount = allBookings.filter((b) => b.status === "pending").length;
+  /* Fallback for older browsers */
+  --primary-border: hsl(var(--primary));
+  --primary-border: hsl(from hsl(var(--primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
 
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      setLocation("/admin");
-    }
-  }, [isLoading, isAuthenticated, setLocation]);
+  /* Fallback for older browsers */
+  --secondary-border: hsl(var(--secondary));
+  --secondary-border: hsl(from hsl(var(--secondary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
 
-  if (isLoading || !isAuthenticated) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="space-y-3 text-center">
-          <Skeleton className="mx-auto h-10 w-10 rounded-full" />
-          <Skeleton className="h-4 w-32 mx-auto" />
-        </div>
-      </div>
-    );
+  /* Fallback for older browsers */
+  --muted-border: hsl(var(--muted));
+  --muted-border: hsl(from hsl(var(--muted)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+
+  /* Fallback for older browsers */
+  --accent-border: hsl(var(--accent));
+  --accent-border: hsl(from hsl(var(--accent)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+
+  /* Fallback for older browsers */
+  --destructive-border: hsl(var(--destructive));
+  --destructive-border: hsl(from hsl(var(--destructive)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+}
+
+@layer base {
+  * {
+    @apply border-border;
   }
 
-  const style = {
-    "--sidebar-width": "16rem",
-    "--sidebar-width-icon": "3.5rem",
-  };
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
 
-  const menuItems = [
-    { title: "Dashboard",  url: "/admin/dashboard", icon: LayoutDashboard, badge: 0 },
-    { title: "Pembayaran", url: "/admin/payments",  icon: CreditCard,      badge: pendingCount },
-    { title: "Layanan",    url: "/admin/services",  icon: Settings,        badge: 0 },
-    { title: "Galeri",     url: "/admin/gallery",   icon: Images,          badge: 0 },
-  ];
+/**
+ * Using the elevate system.
+ * Automatic contrast adjustment.
+ *
+ * <element className="hover-elevate" />
+ * <element className="active-elevate-2" />
+ *
+ * // Using the tailwind utility when a data attribute is "on"
+ * <element className="toggle-elevate data-[state=on]:toggle-elevated" />
+ * // Or manually controlling the toggle state
+ * <element className="toggle-elevate toggle-elevated" />
+ *
+ * Elevation systems have to handle many states.
+ * - not-hovered, vs. hovered vs. active  (three mutually exclusive states)
+ * - toggled or not
+ * - focused or not (this is not handled with these utilities)
+ *
+ * Even without handling focused or not, this is six possible combinations that
+ * need to be distinguished from eachother visually.
+ */
+@layer utilities {
 
-  return (
-    <SidebarProvider style={style as React.CSSProperties}>
-      <div className="flex h-screen w-full">
-        <Sidebar>
-          <SidebarHeader className="p-4">
-            <div className="flex items-center gap-2">
-              <img src={logoImage} alt="Joel Music Studio" className="h-8 w-8 rounded-md object-contain" />
-              <span className="font-semibold text-sm">Joel Music Admin</span>
-            </div>
-          </SidebarHeader>
-          <SidebarContent>
-            <SidebarGroup>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {menuItems.map((item) => {
-                    const isActive = location === item.url;
-                    return (
-                      <SidebarMenuItem key={item.title}>
-                        <SidebarMenuButton asChild data-active={isActive} data-testid={`nav-${item.title.toLowerCase()}`}>
-                          <Link href={item.url}>
-                            <item.icon className="h-4 w-4 shrink-0" />
-                            <span className="flex-1">{item.title}</span>
-                            {item.badge > 0 && (
-                              <span className="ml-auto flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-orange-500 px-1 text-[10px] font-bold text-white" data-testid={`badge-pending-${item.title.toLowerCase()}`}>
-                                {item.badge}
-                              </span>
-                            )}
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    );
-                  })}
-                  <SidebarMenuItem>
-                    <SidebarMenuButton onClick={() => logout()} data-testid="nav-logout">
-                      <LogOut className="h-4 w-4" />
-                      <span>Logout</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          </SidebarContent>
-        </Sidebar>
+  /* Hide ugly search cancel button in Chrome until we can style it properly */
+  input[type="search"]::-webkit-search-cancel-button {
+    @apply hidden;
+  }
 
-        <div className="flex flex-1 flex-col min-w-0">
-          <header className="flex items-center justify-between gap-4 border-b px-4 py-3">
-            <SidebarTrigger className="md:flex hidden" data-testid="button-sidebar-toggle" />
-            <div className="flex items-center gap-2 ml-auto">
-              {user && (
-                <span className="text-sm text-muted-foreground" data-testid="text-admin-username">
-                  {user.username}
-                </span>
-              )}
-              {isSupported && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={handleBellClick}
-                      disabled={pushLoading || permission === "denied"}
-                      data-testid="button-push-toggle"
-                      className={isSubscribed ? "text-primary" : "text-muted-foreground"}
-                    >
-                      {isSubscribed ? <Bell className="h-4 w-4 fill-current" /> : <BellOff className="h-4 w-4" />}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    {permission === "denied"
-                      ? "Notifikasi diblokir di browser"
-                      : isSubscribed
-                      ? "Notifikasi aktif — klik untuk matikan"
-                      : "Aktifkan notifikasi booking"}
-                  </TooltipContent>
-                </Tooltip>
-              )}
-            </div>
-          </header>
+  /* Placeholder styling for contentEditable div */
+  [contenteditable][data-placeholder]:empty::before {
+    content: attr(data-placeholder);
+    color: hsl(var(--muted-foreground));
+    pointer-events: none;
+  }
 
-          <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 md:pb-6 pb-28">
-            {children}
-          </main>
-        </div>
-      </div>
+  /* .no-default-hover-elevate/no-default-active-elevate is an escape hatch so consumers of
+   * buttons/badges can remove the automatic brightness adjustment on interactions
+   * and program their own. */
+  .no-default-hover-elevate {}
 
-      <MobileTabBar pendingCount={pendingCount} onLogout={logout} />
-    </SidebarProvider>
-  );
+  .no-default-active-elevate {}
+
+
+  /**
+   * Toggleable backgrounds go behind the content. Hoverable/active goes on top.
+   * This way they can stack/compound. Both will overlap the parent's borders!
+   * So borders will be automatically adjusted both on toggle, and hover/active,
+   * and they will be compounded.
+   */
+  .toggle-elevate::before,
+  .toggle-elevate-2::before {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset: 0px;
+    /*border-radius: inherit;   match rounded corners */
+    border-radius: inherit;
+    z-index: -1;
+    /* sits behind content but above backdrop */
+  }
+
+  .toggle-elevate.toggle-elevated::before {
+    background-color: var(--elevate-2);
+  }
+
+  /* If there's a 1px border, adjust the inset so that it covers that parent's border */
+  .border.toggle-elevate::before {
+    inset: -1px;
+  }
+
+  /* Does not work on elements with overflow:hidden! */
+  .hover-elevate:not(.no-default-hover-elevate),
+  .active-elevate:not(.no-default-active-elevate),
+  .hover-elevate-2:not(.no-default-hover-elevate),
+  .active-elevate-2:not(.no-default-active-elevate) {
+    position: relative;
+    z-index: 0;
+  }
+
+  .hover-elevate:not(.no-default-hover-elevate)::after,
+  .active-elevate:not(.no-default-active-elevate)::after,
+  .hover-elevate-2:not(.no-default-hover-elevate)::after,
+  .active-elevate-2:not(.no-default-active-elevate)::after {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset: 0px;
+    /*border-radius: inherit;   match rounded corners */
+    border-radius: inherit;
+    z-index: 999;
+    /* sits in front of content */
+  }
+
+  .hover-elevate:hover:not(.no-default-hover-elevate)::after,
+  .active-elevate:active:not(.no-default-active-elevate)::after {
+    background-color: var(--elevate-1);
+  }
+
+  .hover-elevate-2:hover:not(.no-default-hover-elevate)::after,
+  .active-elevate-2:active:not(.no-default-active-elevate)::after {
+    background-color: var(--elevate-2);
+  }
+
+  /* If there's a 1px border, adjust the inset so that it covers that parent's border */
+  .border.hover-elevate:not(.no-hover-interaction-elevate)::after,
+  .border.active-elevate:not(.no-active-interaction-elevate)::after,
+  .border.hover-elevate-2:not(.no-hover-interaction-elevate)::after,
+  .border.active-elevate-2:not(.no-active-interaction-elevate)::after,
+  .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
+    inset: -1px;
+  }
+}
+
+/* ── iOS App Store style mobile tab bar animations ── */
+
+/* Push-then-spring: mirrors Apple's tab bar spring feedback exactly */
+@keyframes tabIconBounce {
+  0%   { transform: scale(1); }
+  16%  { transform: scale(0.82); }
+  38%  { transform: scale(1.12); }
+  58%  { transform: scale(0.96); }
+  74%  { transform: scale(1.04); }
+  88%  { transform: scale(0.99); }
+  100% { transform: scale(1); }
+}
+
+@keyframes tabLabelFadeIn {
+  0%   { opacity: 0.4; transform: translateY(2px) scale(0.94); }
+  60%  { opacity: 1;   transform: translateY(-1px) scale(1.03); }
+  100% { opacity: 1;   transform: translateY(0) scale(1); }
+}
+
+.tab-icon-bounce {
+  animation: tabIconBounce 0.48s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.tab-label-in {
+  animation: tabLabelFadeIn 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
