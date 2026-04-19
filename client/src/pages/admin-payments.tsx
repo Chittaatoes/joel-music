@@ -367,13 +367,28 @@ export default function AdminPayments() {
                       {layananDisplayStr} | {b.jumlahPerson} Person
                     </p>
                     {isMultiSvc ? (
-                      <div className="space-y-0.5">
+                      <div className="space-y-1">
                         {extraServices.map((svc: any, i: number) => {
                           const svcDateStr = svc.tanggal ? format(new Date(svc.tanggal + "T00:00:00"), "dd MMM yyyy", { locale: idLocale }) : dateStr;
+                          const svcEqNames: string[] = [];
+                          if (svc.withKeyboard) svcEqNames.push("Keyboard");
+                          for (const eqId of (svc.selectedEquipmentIds as string[] | null) || []) {
+                            const eq = equipmentList.find((e) => e.id === eqId);
+                            if (eq) svcEqNames.push(eq.name);
+                          }
                           return (
-                            <div key={i} className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <Clock className="h-3 w-3" />
-                              {svcDateStr}, {svc.jamMulai.toString().padStart(2, "0")}:00–{(svc.jamMulai + svc.durasi).toString().padStart(2, "0")}:00 · {svc.name || svc.key}
+                            <div key={i} className="space-y-0.5">
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Clock className="h-3 w-3 shrink-0" />
+                                {svcDateStr}, {svc.jamMulai.toString().padStart(2, "0")}:00–{(svc.jamMulai + svc.durasi).toString().padStart(2, "0")}:00 · <span className="font-medium text-foreground">{svc.name || svc.key}</span>
+                              </div>
+                              {svcEqNames.length > 0 && (
+                                <div className="pl-4 flex flex-wrap gap-1">
+                                  {svcEqNames.map((name) => (
+                                    <span key={name} className="text-[10px] bg-primary/10 text-primary font-medium rounded-full px-2 py-0.5">+ {name}</span>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                           );
                         })}
