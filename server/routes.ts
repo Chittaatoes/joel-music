@@ -1082,6 +1082,17 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  app.get("/api/admin/stats/hourly", async (req, res) => {
+    if (!requireAdmin(req as any, res)) return;
+    try {
+      const stats = await storage.getHourlyStats();
+      res.json(stats);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Failed to fetch hourly stats" });
+    }
+  });
+
   app.get("/api/gallery", async (_req, res) => {
     try {
       const items = await storage.getGalleryItems();
