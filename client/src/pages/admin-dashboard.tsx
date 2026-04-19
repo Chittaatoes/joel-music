@@ -645,11 +645,22 @@ export default function AdminDashboard() {
             {confirmedBookings.map((b) => {
               const extraServices = (b.extraServices as any[] | null) || [];
               const isMultiSvc = extraServices.length > 1;
+              const isCashWithDp = b.paymentMethod === "cash" && !!b.buktiTransfer;
               return (
               <Card key={b.id} className="p-3 space-y-1" data-testid={`card-booking-${b.id}`}>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">{b.namaBand}</span>
-                  <span className="text-sm font-bold">Rp {b.total.toLocaleString("id-ID")}</span>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-medium truncate">{b.namaBand}</span>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {isCashWithDp && (
+                      <Badge className="text-[10px] bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/25" data-testid={`badge-dp-${b.id}`}>
+                        Cash · DP ✓
+                      </Badge>
+                    )}
+                    {!isCashWithDp && b.paymentMethod === "cash" && (
+                      <Badge variant="outline" className="text-[10px]">Cash</Badge>
+                    )}
+                    <span className="text-sm font-bold">Rp {b.total.toLocaleString("id-ID")}</span>
+                  </div>
                 </div>
                 {isMultiSvc ? (
                   <div className="space-y-1">
