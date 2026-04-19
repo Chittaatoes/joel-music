@@ -1,7 +1,7 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useLocation, useSearch } from "wouter";
 import { usePageMeta } from "@/lib/seo";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import type { Service, PricingTier, AdditionalEquipment, ExtraServiceItem } from "@shared/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -117,6 +117,7 @@ export default function BookingFormPage() {
   const [buktiPreview, setBuktiPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [timeLeft, setTimeLeft] = useState(600);
+  const [selectedMethod, setSelectedMethod] = useState<"transfer" | "cash">("transfer");
   const [selectedEquipmentIds, setSelectedEquipmentIds] = useState<string[]>(
     () => equipmentParam ? equipmentParam.split(",").filter(Boolean) : []
   );
@@ -183,6 +184,14 @@ export default function BookingFormPage() {
     staleTime: 0,
     refetchOnWindowFocus: true,
   });
+
+  const { data: appSettings } = useQuery<{ minimalDP: number }>({
+    queryKey: ["/api/settings"],
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+  });
+  const minimalDP = appSettings?.minimalDP ?? 20000;
+  const minimalDPFormatted = minimalDP.toLocaleString("id-ID");
   
   const currentService = serviceList.find((s) => s.key === layananParam);
   const availableEquipment = equipmentList.filter((eq) => {
@@ -208,38 +217,7 @@ export default function BookingFormPage() {
     },
   });
 
-  const createBookingMutation = useMutation({
-    mutationFn: async ({ formData, paymentMethod, buktiTransfer }: { formData: BookingFormValues; paymentMethod: string; buktiTransfer?: string }) => {
-      const res = await apiRequest("POST", "/api/bookings", {
-        namaBand: formData.namaBand,
-        jumlahPerson: parseInt(formData.jumlahPerson),
-        noWa: formData.noWa,
-        jenisLayanan: layananParam,
-        tanggal,
-        jamMulai,
-        durasi,
-        paymentMethod,
-        buktiTransfer,
-        withKeyboard,
-        selectedEquipmentIds,
-        ...(isMultiMode && multiServices.length > 1 ? { extraServices: multiServices } : {}),
-      });
-      return res.json();
-    },
-    onSuccess: (data) => {
-      setBookingId(data.id);
-      queryClient.invalidateQueries({ queryKey: ["/api/bookings/schedule/" + tanggal] });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Gagal membuat booking",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const onSubmit = (data: BookingFormValues) => {
+  const onSubmit = (_data: BookingFormValues) => {
     setStep("payment");
   };
 
@@ -262,140 +240,66 @@ export default function BookingFormPage() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  /* const handleConfirmTransfer = async () => {
-    if (!buktiFile) {
-      toast({ title: "Upload bukti transfer terlebih dahulu", variant: "destructive" });
+  const handleConfirmPayment = async () => {
+    if (!buktiPreview) {
+      const label = selectedMethod === "cash" ? "bukti DP" : "bukti transfer";
+      toast({ title: `Upload ${label} terlebih dahulu`, variant: "destructive" });
       return;
     }
 
     setUploading(true);
-    try {
-      const formDataUpload = new FormData();
-      formDataUpload.append("bukti", buktiFile);
-      const uploadRes = await fetch("/api/upload/bukti", { method: "POST", body: formDataUpload, credentials: "include" });
-      if (!uploadRes.ok) throw new Error("Gagal upload bukti transfer");
-      const { url: buktiUrl } = await uploadRes.json();
 
+    try {
       const values = form.getValues();
-      createBookingMutation.mutate(
-        { formData: values, paymentMethod: "transfer", buktiTransfer: buktiUrl },
-        {
-          onSuccess: () => {
-            let details = `Nama Band: ${values.namaBand}\nLayanan: ${layananLabel}${withKeyboard ? " + Keyboard" : ""}\nJumlah Person: ${values.jumlahPerson} orang\nTanggal: ${formattedDate}\nJam: ${jamMulai.toString().padStart(2, "0")}:00`;
-            if (!isCoverLagu) {
-              details += ` - ${jamSelesai.toString().padStart(2, "0")}:00\nDurasi: ${durasi} jam`;
-            }
-            details += `\nTotal: Rp${total.toLocaleString("id-ID")}`;
-            const message = `Halo Admin Joel Music Studio\n\nSaya ingin booking studio:\n\n${details}\n\nSaya sudah transfer via QRIS/BCA.\nBukti transfer sudah diupload di website.\nTerima kasih`;
-            const encodedMessage = encodeURIComponent(message);
-            window.open(`https://wa.me/${ADMIN_WA}?text=${encodedMessage}`, "_blank");
-            sessionStorage.removeItem("jms_multi_booking");
-            setStep("done");
-          },
-        }
-      );
+
+      const bookingRes = await apiRequest("POST", "/api/bookings", {
+        namaBand: values.namaBand,
+        jumlahPerson: parseInt(values.jumlahPerson),
+        noWa: values.noWa,
+        jenisLayanan: layananParam,
+        tanggal,
+        jamMulai,
+        durasi,
+        paymentMethod: selectedMethod,
+        buktiTransfer: buktiPreview,
+        withKeyboard,
+        selectedEquipmentIds,
+        ...(isMultiMode && multiServices.length > 1 ? { extraServices: multiServices } : {}),
+      });
+
+      const booking = await bookingRes.json();
+
+      queryClient.invalidateQueries({ queryKey: ["/api/bookings/schedule/" + tanggal] });
+
+      setBookingId(booking.id);
+      setBookingCode(booking.bookingId || null);
+      sessionStorage.removeItem("jms_multi_booking");
+      setStep("done");
+
+      saveBookingToHistory({
+        bookingId: booking.bookingId || booking.id,
+        namaBand: values.namaBand,
+        noWa: values.noWa,
+        jenisLayanan: layananParam,
+        tanggal,
+        jamMulai,
+        durasi,
+        total,
+        paymentMethod: selectedMethod,
+        withKeyboard,
+        selectedEquipmentIds,
+        status: "pending",
+        createdAt: new Date().toISOString(),
+      });
+
+      if (booking.bookingId) {
+        redirectToWhatsApp(booking.bookingId, selectedMethod);
+      }
     } catch (error: any) {
-      toast({ title: error.message || "Gagal upload", variant: "destructive" });
+      toast({ title: error.message || "Gagal membuat booking", variant: "destructive" });
     } finally {
       setUploading(false);
     }
-  }; */
-
-  const handleConfirmTransfer = async () => {
-  if (!buktiPreview) {
-    toast({ title: "Upload bukti transfer terlebih dahulu", variant: "destructive" });
-    return;
-  }
-
-  setUploading(true);
-
-  try {
-    const values = form.getValues();
-
-    // 1️⃣ BUAT BOOKING DULU
-    const bookingRes = await apiRequest("POST", "/api/bookings", {
-      namaBand: values.namaBand,
-      jumlahPerson: parseInt(values.jumlahPerson),
-      noWa: values.noWa,
-      jenisLayanan: layananParam,
-      tanggal,
-      jamMulai,
-      durasi,
-      paymentMethod: "transfer",
-      buktiTransfer: buktiPreview,
-      withKeyboard,
-      selectedEquipmentIds,
-      ...(isMultiMode && multiServices.length > 1 ? { extraServices: multiServices } : {}),
-    });
-
-    const booking = await bookingRes.json();
-
-    queryClient.invalidateQueries({ queryKey: ["/api/bookings/schedule/" + tanggal] });
-
-    setBookingId(booking.id);
-    setBookingCode(booking.bookingId || null);
-    sessionStorage.removeItem("jms_multi_booking");
-    setStep("done");
-
-    saveBookingToHistory({
-      bookingId: booking.bookingId || booking.id,
-      namaBand: values.namaBand,
-      noWa: values.noWa,
-      jenisLayanan: layananParam,
-      tanggal,
-      jamMulai,
-      durasi,
-      total,
-      paymentMethod: "transfer",
-      withKeyboard,
-      selectedEquipmentIds,
-      status: "pending",
-      createdAt: new Date().toISOString(),
-    });
-
-    if (booking.bookingId) {
-      redirectToWhatsApp(booking.bookingId, "transfer");
-    }
-
-  } catch (error: any) {
-    toast({ title: error.message || "Gagal membuat booking", variant: "destructive" });
-  } finally {
-    setUploading(false);
-  }
-};
-
-  const handlePayCash = () => {
-    const values = form.getValues();
-    createBookingMutation.mutate(
-      { formData: values, paymentMethod: "cash", selectedEquipmentIds },
-      {
-        onSuccess: (data) => {
-          setBookingCode(data.bookingId || null);
-          sessionStorage.removeItem("jms_multi_booking");
-          setStep("done");
-
-          saveBookingToHistory({
-            bookingId: data.bookingId || data.id,
-            namaBand: values.namaBand,
-            noWa: values.noWa,
-            jenisLayanan: layananParam,
-            tanggal,
-            jamMulai,
-            durasi,
-            total,
-            paymentMethod: "cash",
-            withKeyboard,
-            selectedEquipmentIds,
-            status: "pending",
-            createdAt: new Date().toISOString(),
-          });
-
-          if (data.bookingId) {
-            redirectToWhatsApp(data.bookingId, "cash");
-          }
-        },
-      }
-    );
   };
 
   const buildWhatsAppUrl = (bCode: string, paymentMethod: string): string => {
@@ -455,12 +359,16 @@ export default function BookingFormPage() {
     message += `\u2022 Jumlah Person : ${values.jumlahPerson} orang\n\n`;
     message += `${SEP}\n\n`;
     message += `\u{1F4B3} *Status Pembayaran*\n`;
-    message += `Metode : ${paymentMethod === "cash" ? "Cash" : "Transfer / QRIS"}\n`;
-    if (paymentMethod !== "cash") message += `Bukti : Sudah diupload di website\n`;
-    const statusText = paymentMethod === "cash"
-      ? "\u23F3 Bayar di Tempat (Menunggu Konfirmasi Admin)"
-      : "\u23F3 Menunggu Konfirmasi Admin";
-    message += `Status : ${statusText}\n\n`;
+    if (paymentMethod === "cash") {
+      message += `Metode : Cash di Tempat (DP sudah dibayar)\n`;
+      message += `DP : Min. Rp ${minimalDPFormatted} via QRIS/Transfer\n`;
+      message += `Bukti DP : Sudah diupload di website\n`;
+      message += `Sisa : Akan dibayar di tempat\n`;
+    } else {
+      message += `Metode : Transfer / QRIS (Lunas)\n`;
+      message += `Bukti : Sudah diupload di website\n`;
+    }
+    message += `Status : \u23F3 Menunggu Konfirmasi Admin\n\n`;
     message += `${SEP}\n\n`;
     message += `\u{1F64F} Terima kasih telah booking di *Joel Music Studio*`;
 
@@ -609,6 +517,7 @@ export default function BookingFormPage() {
   }
 
   if (step === "payment") {
+    const isCash = selectedMethod === "cash";
     return (
       <div className="min-h-screen bg-background">
         <nav className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-md">
@@ -623,6 +532,8 @@ export default function BookingFormPage() {
           </div>
         </nav>
         <div className="mx-auto max-w-md px-4 py-6 space-y-6">
+
+          {/* Timer */}
           <Card className={`p-3 flex items-center justify-between gap-2 ${timeLeft <= 60 ? "border-red-500/50 bg-red-500/5" : "border-amber-500/30 bg-amber-500/5"}`}>
             <div className="flex items-center gap-2">
               <Clock className={`h-4 w-4 ${timeLeft <= 60 ? "text-red-500" : "text-amber-600 dark:text-amber-400"}`} />
@@ -633,6 +544,7 @@ export default function BookingFormPage() {
             </span>
           </Card>
 
+          {/* Order summary */}
           <Card className="p-4 space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Nama Band</span>
@@ -695,14 +607,65 @@ export default function BookingFormPage() {
             </div>
           </Card>
 
-          <div className="space-y-1">
-            <p className="text-sm font-medium">Metode Pembayaran:</p>
+          {/* Method selector */}
+          <div className="space-y-2">
+            <p className="text-sm font-semibold">Pilih Metode Pembayaran</p>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => { setSelectedMethod("transfer"); removeBukti(); }}
+                data-testid="button-method-transfer"
+                className={`rounded-xl border-2 p-3 text-left transition-all ${
+                  !isCash
+                    ? "border-primary bg-primary/5"
+                    : "border-border bg-background hover:border-muted-foreground/40"
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <QrCode className={`h-4 w-4 shrink-0 ${!isCash ? "text-primary" : "text-muted-foreground"}`} />
+                  <span className={`text-xs font-semibold ${!isCash ? "text-primary" : "text-foreground"}`}>Transfer / QRIS</span>
+                </div>
+                <p className="text-[10px] text-muted-foreground leading-snug">Bayar lunas sekarang via QRIS atau transfer bank</p>
+              </button>
+              <button
+                type="button"
+                onClick={() => { setSelectedMethod("cash"); removeBukti(); }}
+                data-testid="button-method-cash"
+                className={`rounded-xl border-2 p-3 text-left transition-all ${
+                  isCash
+                    ? "border-primary bg-primary/5"
+                    : "border-border bg-background hover:border-muted-foreground/40"
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <Banknote className={`h-4 w-4 shrink-0 ${isCash ? "text-primary" : "text-muted-foreground"}`} />
+                  <span className={`text-xs font-semibold ${isCash ? "text-primary" : "text-foreground"}`}>Cash di Tempat</span>
+                </div>
+                <p className="text-[10px] text-muted-foreground leading-snug">DP min. Rp {minimalDPFormatted} sekarang, sisa bayar di studio</p>
+              </button>
+            </div>
           </div>
 
+          {/* DP info banner for cash */}
+          {isCash && (
+            <Card className="p-3 border-blue-500/30 bg-blue-500/5">
+              <div className="flex gap-2">
+                <Banknote className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <p className="text-xs font-semibold text-blue-700 dark:text-blue-300">DP Wajib Min. Rp {minimalDPFormatted}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Bayar DP via QRIS atau transfer bank di bawah, lalu upload buktinya. Sisa pembayaran dibayar langsung di studio saat datang.
+                  </p>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* BCA account */}
           <Card className="p-4 space-y-2">
             <div className="flex items-center gap-2">
               <Banknote className="h-4 w-4 text-muted-foreground" />
-              <span className="font-semibold text-sm">BCA</span>
+              <span className="font-semibold text-sm">Transfer Bank BCA</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="font-mono text-sm" data-testid="text-bca-norek">8823018639</span>
@@ -718,6 +681,7 @@ export default function BookingFormPage() {
             <p className="text-xs text-muted-foreground">a.n. MUHAMMAD FAHREZA HAFIDZ</p>
           </Card>
 
+          {/* QRIS */}
           <Card className="p-4 space-y-3">
             <div className="flex items-center gap-2">
               <QrCode className="h-4 w-4 text-muted-foreground" />
@@ -733,19 +697,25 @@ export default function BookingFormPage() {
             </div>
           </Card>
 
+          {/* Warning */}
           <Card className="p-3 border-amber-500/30 bg-amber-500/5">
             <div className="flex gap-2">
               <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
               <p className="text-xs text-muted-foreground">
-                Pastikan kamu sudah membayar via transfer bank atau QRIS, lalu upload bukti transfer di bawah sebelum konfirmasi pesanan.
+                {isCash
+                  ? `Pastikan kamu sudah transfer DP minimal Rp ${minimalDPFormatted} via QRIS atau BCA, lalu upload buktinya di bawah untuk konfirmasi booking.`
+                  : "Pastikan kamu sudah membayar lunas via transfer bank atau QRIS, lalu upload bukti di bawah sebelum konfirmasi pesanan."}
               </p>
             </div>
           </Card>
 
+          {/* Upload bukti */}
           <Card className="p-4 space-y-3">
             <div className="flex items-center gap-2">
               <Upload className="h-4 w-4 text-muted-foreground" />
-              <span className="font-semibold text-sm">Upload Bukti Transfer</span>
+              <span className="font-semibold text-sm">
+                {isCash ? "Upload Bukti DP" : "Upload Bukti Transfer"}
+              </span>
             </div>
             <input
               ref={fileInputRef}
@@ -759,7 +729,7 @@ export default function BookingFormPage() {
               <div className="relative">
                 <img
                   src={buktiPreview}
-                  alt="Bukti transfer"
+                  alt="Bukti pembayaran"
                   className="w-full max-h-[300px] object-contain rounded-md border"
                   data-testid="img-bukti-preview"
                 />
@@ -781,7 +751,9 @@ export default function BookingFormPage() {
                 data-testid="button-select-bukti"
               >
                 <ImagePlus className="h-8 w-8" />
-                <span className="text-sm">Tap untuk pilih foto bukti transfer</span>
+                <span className="text-sm">
+                  {isCash ? "Tap untuk upload foto bukti DP" : "Tap untuk pilih foto bukti transfer"}
+                </span>
                 <span className="text-xs">JPG, PNG, atau WebP (maks 5MB)</span>
               </button>
             )}
@@ -790,30 +762,16 @@ export default function BookingFormPage() {
           <div className="space-y-2">
             <Button
               className="w-full"
-              onClick={handleConfirmTransfer}
-              disabled={createBookingMutation.isPending || uploading || !buktiFile}
-              data-testid="button-confirm-transfer"
+              onClick={handleConfirmPayment}
+              disabled={uploading || !buktiPreview}
+              data-testid="button-confirm-payment"
             >
-              {(createBookingMutation.isPending || uploading) ? (
+              {uploading ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
-                <Upload className="mr-2 h-4 w-4" />
+                <Send className="mr-2 h-4 w-4" />
               )}
-              {uploading ? "Mengupload..." : "Konfirmasi Pesanan"}
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={handlePayCash}
-              disabled={createBookingMutation.isPending}
-              data-testid="button-pay-cash"
-            >
-              {createBookingMutation.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Banknote className="mr-2 h-4 w-4" />
-              )}
-              Bayar Cash
+              {uploading ? "Memproses..." : isCash ? "Konfirmasi Booking (DP Dibayar)" : "Konfirmasi Pesanan"}
             </Button>
             <Button
               variant="ghost"
@@ -1002,20 +960,10 @@ export default function BookingFormPage() {
             <Button
               type="submit"
               className="w-full"
-              disabled={createBookingMutation.isPending}
               data-testid="button-submit-booking"
             >
-              {createBookingMutation.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Memproses...
-                </>
-              ) : (
-                <>
-                  <Send className="mr-2 h-4 w-4" />
-                  Lanjutkan ke Pembayaran
-                </>
-              )}
+              <Send className="mr-2 h-4 w-4" />
+              Lanjutkan ke Pembayaran
             </Button>
           </form>
         </Form>
