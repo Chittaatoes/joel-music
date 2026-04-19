@@ -10,6 +10,7 @@ import {
   galleryLikes,
   pushSubscriptions,
   pageViews,
+  appSettings,
   type Booking,
   type InsertBooking,
   type DailyCost,
@@ -107,6 +108,8 @@ export interface IStorage {
     homepage: { hour: number; count: number }[];
     booking: { hour: number; count: number }[];
   }>;
+  getSetting(key: string): Promise<string | null>;
+  upsertSetting(key: string, value: string): Promise<void>;
 }
 
 class DatabaseStorage implements IStorage {
@@ -500,6 +503,16 @@ class DatabaseStorage implements IStorage {
     ]);
 
     return { homepage, booking };
+  }
+
+  async getSetting(key: string): Promise<string | null> {
+    const [row] = await db.select().from(appSettings).where(eq(appSettings.key, key));
+    return row?.value ?? null;
+  }
+
+  async upsertSetting(key: string, value: string): Promise<void> {
+    await db.insert(appSettings).values({ key, value })
+      .onConflictDoUpdate({ target: appSettings.key, set: { value } });
   }
 }
 
