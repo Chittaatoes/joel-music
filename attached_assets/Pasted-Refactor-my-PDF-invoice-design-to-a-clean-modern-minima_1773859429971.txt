@@ -1,0 +1,197 @@
+<<<<<<< HEAD
+Refactor my PDF invoice design to a clean, modern, minimal SaaS-style layout (like Stripe / Notion invoices).
+
+Current issues:
+
+* Too many decorative elements (stars, ornaments)
+* Looks a bit old-fashioned (serif style)
+* Layout not perfectly balanced
+* Payment box feels too heavy
+* Still some empty / wasted space
+
+Goals:
+
+1. Make it clean, minimal, and modern (NO decorations)
+2. Improve alignment and spacing consistency
+3. Use better visual hierarchy (clear sections, readable flow)
+4. Balance layout (no side feels heavier)
+5. Make it look like a professional SaaS invoice
+
+Design Rules:
+
+STYLE:
+
+* Remove ALL decorative elements (no stars, no ornaments)
+* Use simple lines, spacing, and alignment only
+* Use clean sans-serif typography style
+* Consistent spacing system (8px–12px vertical rhythm)
+
+HEADER:
+
+* Centered studio name: "JOEL MUSIC STUDIO" (bold, clean)
+* Add thin divider line below
+* Invoice info (Invoice ID, Booking ID, Date) aligned right in a compact block
+
+LAYOUT:
+
+* Use a balanced 2-column layout:
+
+LEFT (main content):
+
+* Customer Details
+* Booking Details (table style)
+
+RIGHT (summary):
+
+* Payment Summary (clean card style)
+
+SECTIONS:
+
+* Use simple section titles (bold, slightly larger font)
+* No heavy borders — use light dividers instead
+
+BOOKING TABLE:
+
+* Keep table but simplify:
+
+  * Clean borders
+  * Equal padding
+  * Better alignment (center numbers, left text)
+
+PAYMENT SUMMARY:
+
+* Use a clean card (light background or thin border)
+* Make TOTAL prominent:
+
+  * Bigger font
+  * Bold
+* Style status as badge:
+
+  * PAID → green subtle background
+  * PENDING → orange
+* Keep it minimal, not heavy
+
+COLORS:
+
+* Use neutral colors:
+
+  * Black / dark gray text
+  * Light gray dividers
+  * Subtle highlight (not bright yellow)
+
+FOOTER:
+
+* Move footer closer (no big empty space)
+* Add:
+  "Please arrive 10 minutes before your session"
+* Keep it small and subtle
+
+SPACING:
+
+* Reduce empty space significantly
+* Keep content compact but breathable
+
+OUTPUT:
+Refactor my existing PDFKit code to follow this layout exactly.
+
+IMPORTANT:
+The result should look like a modern SaaS invoice (clean, minimal, professional — not decorative, not old-school).
+=======
+Refactor my PDF invoice design to a clean, modern, minimal SaaS-style layout (like Stripe / Notion invoices).
+
+Current issues:
+
+* Too many decorative elements (stars, ornaments)
+* Looks a bit old-fashioned (serif style)
+* Layout not perfectly balanced
+* Payment box feels too heavy
+* Still some empty / wasted space
+
+Goals:
+
+1. Make it clean, minimal, and modern (NO decorations)
+2. Improve alignment and spacing consistency
+3. Use better visual hierarchy (clear sections, readable flow)
+4. Balance layout (no side feels heavier)
+5. Make it look like a professional SaaS invoice
+
+Design Rules:
+
+STYLE:
+
+* Remove ALL decorative elements (no stars, no ornaments)
+* Use simple lines, spacing, and alignment only
+* Use clean sans-serif typography style
+* Consistent spacing system (8px–12px vertical rhythm)
+
+HEADER:
+
+* Centered studio name: "JOEL MUSIC STUDIO" (bold, clean)
+* Add thin divider line below
+* Invoice info (Invoice ID, Booking ID, Date) aligned right in a compact block
+
+LAYOUT:
+
+* Use a balanced 2-column layout:
+
+LEFT (main content):
+
+* Customer Details
+* Booking Details (table style)
+
+RIGHT (summary):
+
+* Payment Summary (clean card style)
+
+SECTIONS:
+
+* Use simple section titles (bold, slightly larger font)
+* No heavy borders — use light dividers instead
+
+BOOKING TABLE:
+
+* Keep table but simplify:
+
+  * Clean borders
+  * Equal padding
+  * Better alignment (center numbers, left text)
+
+PAYMENT SUMMARY:
+
+* Use a clean card (light background or thin border)
+* Make TOTAL prominent:
+
+  * Bigger font
+  * Bold
+* Style status as badge:
+
+  * PAID → green subtle background
+  * PENDING → orange
+* Keep it minimal, not heavy
+
+COLORS:
+
+* Use neutral colors:
+
+  * Black / dark gray text
+  * Light gray dividers
+  * Subtle highlight (not bright yellow)
+
+FOOTER:
+
+* Move footer closer (no big empty space)
+* Add:
+  "Please arrive 10 minutes before your session"
+* Keep it small and subtle
+
+SPACING:
+
+* Reduce empty space significantly
+* Keep content compact but breathable
+
+OUTPUT:
+Refactor my existing PDFKit code to follow this layout exactly.
+
+IMPORTANT:
+The result should look like a modern SaaS invoice (clean, minimal, professional — not decorative, not old-school).
+>>>>>>> ec0596f08e99803da05f1736eb031196f5bfc984

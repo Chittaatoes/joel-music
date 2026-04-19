@@ -1,0 +1,189 @@
+<<<<<<< HEAD
+Refine my PDF invoice layout to make it more visually balanced, filled, and professional WITHOUT changing the existing structure.
+
+Important:
+
+* Do NOT change layout structure
+* Do NOT change sections
+* Only improve positioning, spacing, and text sizing
+
+Current structure (KEEP THIS):
+
+* Header (title + subtitle)
+* Invoice info
+* Customer
+* Booking details
+* Payment summary (right side)
+* Footer
+
+GOALS:
+
+1. Make the layout feel more "filled" and less empty
+2. Improve visual hierarchy using text sizes
+3. Improve spacing and alignment
+4. Make it look more premium and balanced
+
+IMPROVEMENTS REQUIRED:
+
+1. TYPOGRAPHY HIERARCHY:
+
+* Title (JOEL MUSIC STUDIO): slightly larger and bold
+* Subtitle (Booking Invoice): smaller and lighter
+* Section titles (CUSTOMER, BOOKING DETAILS, PAYMENT SUMMARY):
+  → slightly bigger and bold
+  → add letter spacing (tracking) for modern look
+* Labels (Nama Band, Jam, etc): medium weight
+* Values: normal weight but clearer spacing
+
+2. TEXT SIZING:
+
+* Increase overall readability slightly
+* Make TOTAL the most prominent number:
+  → larger font size
+  → bold
+* Make "LUNAS" slightly bigger and clearer (badge feel)
+
+3. SPACING:
+
+* Reduce excessive empty vertical gaps
+* Add consistent spacing between sections (8–16px rhythm)
+* Tighten spacing inside sections (especially booking details)
+
+4. ALIGNMENT:
+
+* Align labels and values more cleanly:
+  → left side consistent
+* Ensure columns feel balanced (left vs right)
+
+5. CONTENT DENSITY:
+
+* Bring sections slightly closer together
+* Make layout feel more compact but still breathable
+
+6. PAYMENT SUMMARY:
+
+* Keep same position
+* Improve internal spacing:
+  → items closer
+  → total separated slightly
+* Make it visually stronger without making it heavier
+
+7. HEADER AREA:
+
+* Reduce unnecessary top spacing
+* Bring content slightly upward
+
+8. FOOTER:
+
+* Move footer slightly upward (reduce bottom empty space)
+* Keep it subtle but closer to content
+
+9. WATERMARK:
+
+* Keep existing watermark
+* Slightly reposition to better fill empty middle area if needed
+* Keep opacity low
+
+IMPORTANT:
+
+* Do NOT redesign layout
+* Do NOT change structure
+* Only polish spacing, sizing, and positioning
+
+RESULT:
+The invoice should feel more compact, balanced, and premium — with better use of space and clearer hierarchy, while keeping the same layout design.
+=======
+Refine my PDF invoice layout to make it more visually balanced, filled, and professional WITHOUT changing the existing structure.
+
+Important:
+
+* Do NOT change layout structure
+* Do NOT change sections
+* Only improve positioning, spacing, and text sizing
+
+Current structure (KEEP THIS):
+
+* Header (title + subtitle)
+* Invoice info
+* Customer
+* Booking details
+* Payment summary (right side)
+* Footer
+
+GOALS:
+
+1. Make the layout feel more "filled" and less empty
+2. Improve visual hierarchy using text sizes
+3. Improve spacing and alignment
+4. Make it look more premium and balanced
+
+IMPROVEMENTS REQUIRED:
+
+1. TYPOGRAPHY HIERARCHY:
+
+* Title (JOEL MUSIC STUDIO): slightly larger and bold
+* Subtitle (Booking Invoice): smaller and lighter
+* Section titles (CUSTOMER, BOOKING DETAILS, PAYMENT SUMMARY):
+  → slightly bigger and bold
+  → add letter spacing (tracking) for modern look
+* Labels (Nama Band, Jam, etc): medium weight
+* Values: normal weight but clearer spacing
+
+2. TEXT SIZING:
+
+* Increase overall readability slightly
+* Make TOTAL the most prominent number:
+  → larger font size
+  → bold
+* Make "LUNAS" slightly bigger and clearer (badge feel)
+
+3. SPACING:
+
+* Reduce excessive empty vertical gaps
+* Add consistent spacing between sections (8–16px rhythm)
+* Tighten spacing inside sections (especially booking details)
+
+4. ALIGNMENT:
+
+* Align labels and values more cleanly:
+  → left side consistent
+* Ensure columns feel balanced (left vs right)
+
+5. CONTENT DENSITY:
+
+* Bring sections slightly closer together
+* Make layout feel more compact but still breathable
+
+6. PAYMENT SUMMARY:
+
+* Keep same position
+* Improve internal spacing:
+  → items closer
+  → total separated slightly
+* Make it visually stronger without making it heavier
+
+7. HEADER AREA:
+
+* Reduce unnecessary top spacing
+* Bring content slightly upward
+
+8. FOOTER:
+
+* Move footer slightly upward (reduce bottom empty space)
+* Keep it subtle but closer to content
+
+9. WATERMARK:
+
+* Keep existing watermark
+* Slightly reposition to better fill empty middle area if needed
+* Keep opacity low
+
+IMPORTANT:
+
+* Do NOT redesign layout
+* Do NOT change structure
+* Only polish spacing, sizing, and positioning
+
+RESULT:
+The invoice should feel more compact, balanced, and premium — with better use of space and clearer hierarchy, while keeping the same layout design.
+>>>>>>> ec0596f08e99803da05f1736eb031196f5bfc984
