@@ -312,7 +312,15 @@ export default function BookingFormPage() {
       for (const svc of multiServices) {
         const jamStr = `${svc.jamMulai.toString().padStart(2, "0")}:00 \u2013 ${(svc.jamMulai + svc.durasi).toString().padStart(2, "0")}:00`;
         const svcDateStr = svc.tanggal ? format(parse(svc.tanggal, "yyyy-MM-dd", new Date()), "dd MMM yyyy", { locale: idLocale }) : formattedDate;
-        message += `\u2022 ${svc.name} : ${svcDateStr}, ${jamStr} (${svc.durasi} jam)\n`;
+        const svcAlatNames: string[] = [];
+        if (svc.withKeyboard) svcAlatNames.push("Keyboard");
+        for (const eqId of svc.selectedEquipmentIds || []) {
+          const eq = equipmentList.find((e) => e.id === eqId);
+          if (eq) svcAlatNames.push(eq.name);
+        }
+        message += `\u2022 ${svc.name} : ${svcDateStr}, ${jamStr} (${svc.durasi} jam)`;
+        if (svcAlatNames.length > 0) message += ` [${svcAlatNames.join(", ")}]`;
+        message += `\n`;
       }
       message += `\n${SEP}\n\n`;
       message += `\u{1F4CA} *Detail Harga*\n`;
@@ -425,19 +433,34 @@ export default function BookingFormPage() {
               <span className="font-medium">{formattedDate}</span>
             </div>
             {isMultiMode && multiServices.length > 1 ? (
-              <div className="space-y-1 pt-1">
+              <div className="space-y-1.5 pt-1">
                 <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Layanan</span>
                 {multiServices.map((svc, i) => {
                   const svcDateStr = svc.tanggal ? format(parse(svc.tanggal, "yyyy-MM-dd", new Date()), "dd MMM", { locale: idLocale }) : "";
+                  const svcEqNames: string[] = [];
+                  if (svc.withKeyboard) svcEqNames.push("Keyboard");
+                  for (const id of svc.selectedEquipmentIds || []) {
+                    const eq = equipmentList.find((e) => e.id === id);
+                    if (eq) svcEqNames.push(eq.name);
+                  }
                   return (
-                  <div key={i} className="flex justify-between text-sm pl-2">
-                    <div>
-                      <span className="font-medium">{svc.name}</span>
-                      <span className="text-muted-foreground ml-2 text-xs">
-                        {svcDateStr && `${svcDateStr} · `}{svc.jamMulai.toString().padStart(2, "0")}:00–{(svc.jamMulai + svc.durasi).toString().padStart(2, "0")}:00
-                      </span>
+                  <div key={i} className="pl-2 space-y-0.5">
+                    <div className="flex justify-between text-sm">
+                      <div>
+                        <span className="font-medium">{svc.name}</span>
+                        <span className="text-muted-foreground ml-2 text-xs">
+                          {svcDateStr && `${svcDateStr} · `}{svc.jamMulai.toString().padStart(2, "0")}:00–{(svc.jamMulai + svc.durasi).toString().padStart(2, "0")}:00
+                        </span>
+                      </div>
+                      <span>Rp {svc.subtotal.toLocaleString("id-ID")}</span>
                     </div>
-                    <span>Rp {svc.subtotal.toLocaleString("id-ID")}</span>
+                    {svcEqNames.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {svcEqNames.map((name) => (
+                          <span key={name} className="text-[10px] bg-primary/10 text-primary font-medium rounded-full px-2 py-0.5">+ {name}</span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   );
                 })}
@@ -555,15 +578,30 @@ export default function BookingFormPage() {
                 <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Layanan</span>
                 {multiServices.map((svc, i) => {
                   const svcDateStr = svc.tanggal ? format(parse(svc.tanggal, "yyyy-MM-dd", new Date()), "dd MMM yyyy", { locale: idLocale }) : formattedDate;
+                  const svcEqNames: string[] = [];
+                  if (svc.withKeyboard) svcEqNames.push("Keyboard");
+                  for (const id of svc.selectedEquipmentIds || []) {
+                    const eq = equipmentList.find((e) => e.id === id);
+                    if (eq) svcEqNames.push(eq.name);
+                  }
                   return (
-                  <div key={i} className="flex justify-between text-sm pl-2">
-                    <div>
-                      <span className="font-medium">{svc.name}</span>
-                      <span className="text-muted-foreground ml-2 text-xs">
-                        {svcDateStr} · {svc.jamMulai.toString().padStart(2, "0")}:00–{(svc.jamMulai + svc.durasi).toString().padStart(2, "0")}:00 · {svc.durasi} jam
-                      </span>
+                  <div key={i} className="pl-2 space-y-0.5">
+                    <div className="flex justify-between text-sm">
+                      <div>
+                        <span className="font-medium">{svc.name}</span>
+                        <span className="text-muted-foreground ml-2 text-xs">
+                          {svcDateStr} · {svc.jamMulai.toString().padStart(2, "0")}:00–{(svc.jamMulai + svc.durasi).toString().padStart(2, "0")}:00 · {svc.durasi} jam
+                        </span>
+                      </div>
+                      <span className="font-medium">Rp {svc.subtotal.toLocaleString("id-ID")}</span>
                     </div>
-                    <span className="font-medium">Rp {svc.subtotal.toLocaleString("id-ID")}</span>
+                    {svcEqNames.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {svcEqNames.map((name) => (
+                          <span key={name} className="text-[10px] bg-primary/10 text-primary font-medium rounded-full px-2 py-0.5">+ {name}</span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   );
                 })}
@@ -807,18 +845,33 @@ export default function BookingFormPage() {
             <div className="space-y-1.5 pt-1">
               {multiServices.map((svc, i) => {
                 const svcDateStr = svc.tanggal ? format(parse(svc.tanggal, "yyyy-MM-dd", new Date()), "dd MMM", { locale: idLocale }) : "";
+                const svcEqNames: string[] = [];
+                if (svc.withKeyboard) svcEqNames.push("Keyboard");
+                for (const id of svc.selectedEquipmentIds || []) {
+                  const eq = equipmentList.find((e) => e.id === id);
+                  if (eq) svcEqNames.push(eq.name);
+                }
                 return (
-                <div key={i} className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="w-4 h-4 rounded-full bg-primary/15 text-primary flex items-center justify-center shrink-0">
-                      <span className="text-[9px] font-bold">{i + 1}</span>
+                <div key={i} className="space-y-0.5">
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-4 h-4 rounded-full bg-primary/15 text-primary flex items-center justify-center shrink-0">
+                        <span className="text-[9px] font-bold">{i + 1}</span>
+                      </div>
+                      <span className="font-medium truncate">{svc.name}</span>
+                      <span className="text-muted-foreground text-xs shrink-0">
+                        {svcDateStr && `${svcDateStr} · `}{svc.jamMulai.toString().padStart(2, "0")}:00–{(svc.jamMulai + svc.durasi).toString().padStart(2, "0")}:00
+                      </span>
                     </div>
-                    <span className="font-medium truncate">{svc.name}</span>
-                    <span className="text-muted-foreground text-xs shrink-0">
-                      {svcDateStr && `${svcDateStr} · `}{svc.jamMulai.toString().padStart(2, "0")}:00–{(svc.jamMulai + svc.durasi).toString().padStart(2, "0")}:00
-                    </span>
+                    <span className="font-medium shrink-0">Rp {svc.subtotal.toLocaleString("id-ID")}</span>
                   </div>
-                  <span className="font-medium shrink-0">Rp {svc.subtotal.toLocaleString("id-ID")}</span>
+                  {svcEqNames.length > 0 && (
+                    <div className="pl-6 flex flex-wrap gap-1">
+                      {svcEqNames.map((name) => (
+                        <span key={name} className="text-[10px] bg-primary/10 text-primary font-medium rounded-full px-2 py-0.5">+ {name}</span>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 );
               })}
