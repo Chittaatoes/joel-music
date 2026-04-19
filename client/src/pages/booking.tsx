@@ -688,20 +688,30 @@ export default function BookingPage() {
                     const jamMulai = si.slots[0];
                     const jamSelesai = jamMulai + durasi;
                     const itemDate = format(parse(si.tanggal, "yyyy-MM-dd", new Date()), "dd MMM", { locale: idLocale });
+                    const eqNames = si.equipmentIds.map((id) => equipmentList.find((e) => e.id === id)?.name).filter(Boolean) as string[];
                     return (
-                      <div key={si.id} className="flex items-center justify-between text-sm gap-2">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <div className="w-4 h-4 rounded-full bg-primary/15 text-primary flex items-center justify-center shrink-0">
-                            <span className="text-[9px] font-bold">{idx + 1}</span>
+                      <div key={si.id} className="space-y-0.5">
+                        <div className="flex items-center justify-between text-sm gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className="w-4 h-4 rounded-full bg-primary/15 text-primary flex items-center justify-center shrink-0">
+                              <span className="text-[9px] font-bold">{idx + 1}</span>
+                            </div>
+                            <span className="font-medium truncate">{svc.name}</span>
+                            <span className="text-muted-foreground text-xs shrink-0">
+                              {itemDate} · {isCoverLagu
+                                ? `${jamMulai.toString().padStart(2, "0")}:00`
+                                : `${jamMulai.toString().padStart(2, "0")}:00–${jamSelesai.toString().padStart(2, "0")}:00`}
+                            </span>
                           </div>
-                          <span className="font-medium truncate">{svc.name}</span>
-                          <span className="text-muted-foreground text-xs shrink-0">
-                            {itemDate} · {isCoverLagu
-                              ? `${jamMulai.toString().padStart(2, "0")}:00`
-                              : `${jamMulai.toString().padStart(2, "0")}:00–${jamSelesai.toString().padStart(2, "0")}:00`}
-                          </span>
+                          <span className="font-medium shrink-0">Rp {subtotal.toLocaleString("id-ID")}</span>
                         </div>
-                        <span className="font-medium shrink-0">Rp {subtotal.toLocaleString("id-ID")}</span>
+                        {eqNames.length > 0 && (
+                          <div className="pl-6 flex flex-wrap gap-1">
+                            {eqNames.map((name) => (
+                              <span key={name} className="text-[10px] bg-primary/10 text-primary font-medium rounded-full px-2 py-0.5">+ {name}</span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -721,18 +731,28 @@ export default function BookingPage() {
                 const durasi = isCoverLagu ? 1 : si.slots.length;
                 const jamMulai = si.slots[0];
                 const jamSelesai = jamMulai + durasi;
+                const eqNames = si.equipmentIds.map((id) => equipmentList.find((e) => e.id === id)?.name).filter(Boolean) as string[];
                 return (
-                  <div className="flex flex-wrap items-center gap-2 mb-3">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium" data-testid="text-booking-summary">
-                      {isCoverLagu
-                        ? `Sesi: ${jamMulai.toString().padStart(2, "0")}:00`
-                        : `${jamMulai.toString().padStart(2, "0")}:00 – ${jamSelesai.toString().padStart(2, "0")}:00`}
-                    </span>
-                    {!isCoverLagu && <Badge variant="secondary" data-testid="badge-duration">{durasi} jam</Badge>}
-                    <span className="ml-auto text-lg font-bold" data-testid="text-booking-total">
-                      Rp {grandTotal.toLocaleString("id-ID")}
-                    </span>
+                  <div className="mb-3 space-y-1.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium" data-testid="text-booking-summary">
+                        {isCoverLagu
+                          ? `Sesi: ${jamMulai.toString().padStart(2, "0")}:00`
+                          : `${jamMulai.toString().padStart(2, "0")}:00 – ${jamSelesai.toString().padStart(2, "0")}:00`}
+                      </span>
+                      {!isCoverLagu && <Badge variant="secondary" data-testid="badge-duration">{durasi} jam</Badge>}
+                      <span className="ml-auto text-lg font-bold" data-testid="text-booking-total">
+                        Rp {grandTotal.toLocaleString("id-ID")}
+                      </span>
+                    </div>
+                    {eqNames.length > 0 && (
+                      <div className="flex flex-wrap gap-1 pl-6">
+                        {eqNames.map((name) => (
+                          <span key={name} className="text-[10px] bg-primary/10 text-primary font-medium rounded-full px-2 py-0.5">+ {name}</span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 );
               })()}
