@@ -405,6 +405,14 @@ export default function AdminPayments() {
                           <><CreditCard className="mr-1 h-3 w-3" />Transfer</>
                         )}
                       </Badge>
+                      {b.paymentMethod === "cash" && !!b.buktiTransfer && (
+                        <Badge
+                          className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/25"
+                          data-testid={`badge-dp-dibayar-${b.id}`}
+                        >
+                          DP Dibayar
+                        </Badge>
+                      )}
                     </div>
                   </div>
                   <span className="text-sm font-bold shrink-0" data-testid={`text-total-${b.id}`}>Rp {displayTotal.toLocaleString("id-ID")}</span>
