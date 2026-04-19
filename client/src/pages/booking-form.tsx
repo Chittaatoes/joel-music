@@ -194,10 +194,6 @@ export default function BookingFormPage() {
   const minimalDPFormatted = minimalDP.toLocaleString("id-ID");
   
   const currentService = serviceList.find((s) => s.key === layananParam);
-  const availableEquipment = equipmentList.filter((eq) => {
-    const serviceKeys = (eq.serviceKeys as string[] | null) || [];
-    return eq.isActive && serviceKeys.includes(layananParam);
-  });
 
   const isCoverLagu = currentService?.isFixedPrice ?? layananParam === "cover_lagu";
   const singleTotal = calcServicePrice(currentService, durasi, withKeyboard, selectedEquipmentIds, equipmentList);
@@ -927,35 +923,6 @@ export default function BookingFormPage() {
                 </FormItem>
               )}
             />
-
-            {availableEquipment.length > 0 && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Tambahan Alat (Opsional)</label>
-                <div className="space-y-2">
-                  {availableEquipment.map((eq) => (
-                    <div key={eq.id} className="flex items-center gap-2 p-3 rounded-md border">
-                      <input
-                        type="checkbox"
-                        id={`equipment-${eq.id}`}
-                        checked={selectedEquipmentIds.includes(eq.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedEquipmentIds([...selectedEquipmentIds, eq.id]);
-                          } else {
-                            setSelectedEquipmentIds(selectedEquipmentIds.filter((id) => id !== eq.id));
-                          }
-                        }}
-                        data-testid={`checkbox-equipment-${eq.id}`}
-                      />
-                      <label htmlFor={`equipment-${eq.id}`} className="flex-1 cursor-pointer">
-                        <div className="text-sm font-medium">{eq.name}</div>
-                        <div className="text-xs text-muted-foreground">Rp {eq.pricePerHour.toLocaleString("id-ID")}/jam</div>
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
 
             <Button
               type="submit"
