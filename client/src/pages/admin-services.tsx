@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,7 @@ import {
   ChevronUp,
   GripVertical,
   Clock,
+  Banknote,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -126,10 +127,16 @@ export default function AdminServices() {
   const [equipmentForm, setEquipmentForm] = useState<EquipmentForm>({ name: "", pricePerHour: "", serviceKeys: [], isActive: true, sortOrder: "0" });
   const [deleteEquipmentTarget, setDeleteEquipmentTarget] = useState<AdditionalEquipment | null>(null);
 
+  const [minimalDPInput, setMinimalDPInput] = useState<string>("");
+
   const { data: services = [], isLoading } = useQuery<Service[]>({
     queryKey: ["/api/admin/services"],
   });
   
+  const { data: appSettingsData } = useQuery<{ minimalDP: number }>({
+    queryKey: ["/api/settings"],
+  });
+
   const { data: schedule = [], isLoading: loadingSchedule } = useQuery<OperationalSchedule[]>({
     queryKey: ["/api/operational-schedule"],
   });
@@ -146,6 +153,26 @@ export default function AdminServices() {
       toast({ title: "Gagal menyimpan jadwal", variant: "destructive" });
     },
   });
+
+  const updateSettingsMutation = useMutation({
+    mutationFn: async (minimalDP: number) => {
+      const res = await apiRequest("PATCH", "/api/admin/settings", { minimalDP });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
+      toast({ title: "Minimal DP berhasil disimpan" });
+    },
+    onError: () => {
+      toast({ title: "Gagal menyimpan minimal DP", variant: "destructive" });
+    },
+  });
+
+  useEffect(() => {
+    if (appSettingsData?.minimalDP !== undefined) {
+      setMinimalDPInput(String(appSettingsData.minimalDP));
+    }
+  }, [appSettingsData?.minimalDP]);
 
   const { data: equipment = [], isLoading: loadingEquipment } = useQuery<AdditionalEquipment[]>({
     queryKey: ["/api/admin/equipment"],
@@ -655,6 +682,55 @@ export default function AdminServices() {
             })}
           </div>
         )}
+      </div>
+
+      {/* Pengaturan Pembayaran */}
+      <div className="space-y-3">
+        <h2 className="text-base font-semibold flex items-center gap-2">
+          <Banknote className="h-4 w-4" />
+          Pengaturan Pembayaran
+        </h2>
+        <Card className="p-4 space-y-3">
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium">Minimal DP Cash (Rp)</label>
+            <p className="text-xs text-muted-foreground">
+              Jumlah minimal down payment yang harus dibayar pelanggan saat memilih metode Cash di Tempat.
+            </p>
+            <div className="flex gap-2 items-center">
+              <Input
+                type="number"
+                min={0}
+                step={1000}
+                value={minimalDPInput}
+                onChange={(e) => setMinimalDPInput(e.target.value)}
+                className="max-w-[180px]"
+                data-testid="input-minimal-dp"
+              />
+              <Button
+                type="button"
+                size="sm"
+                disabled={updateSettingsMutation.isPending}
+                onClick={() => {
+                  const val = parseInt(minimalDPInput);
+                  if (!isNaN(val) && val >= 0) {
+                    updateSettingsMutation.mutate(val);
+                  } else {
+                    toast({ title: "Nilai tidak valid", variant: "destructive" });
+                  }
+                }}
+                data-testid="button-save-minimal-dp"
+              >
+                {updateSettingsMutation.isPending && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
+                Simpan
+              </Button>
+            </div>
+            {appSettingsData && (
+              <p className="text-xs text-muted-foreground">
+                Saat ini: Rp {(appSettingsData.minimalDP).toLocaleString("id-ID")}
+              </p>
+            )}
+          </div>
+        </Card>
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={(open) => !open && closeDialog()}>
