@@ -125,6 +125,19 @@ export default function AdminDashboard() {
     refetchInterval: 60000,
   });
 
+  const { data: hourlyStats } = useQuery<{
+    homepage: { hour: number; count: number }[];
+    booking: { hour: number; count: number }[];
+  }>({
+    queryKey: ["/api/admin/stats/hourly"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/stats/hourly", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
+    },
+    refetchInterval: 60000,
+  });
+
   const addCostMutation = useMutation({
     mutationFn: async () => {
       const res = await apiRequest("POST", "/api/admin/costs", {
@@ -484,6 +497,99 @@ export default function AdminDashboard() {
           </div>
         ) : null}
       </div>
+
+      {hourlyStats && (hourlyStats.homepage.length > 0 || hourlyStats.booking.length > 0) && (
+        <div className="space-y-3">
+          <h2 className="text-base font-semibold flex items-center gap-2">
+            <Clock className="h-4 w-4 text-primary" />
+            Jam Tersibuk Pengunjung
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {(
+              [
+                { key: "homepage", label: "Beranda", data: hourlyStats.homepage },
+                { key: "booking", label: "Pilih Jadwal (Booking)", data: hourlyStats.booking },
+              ] as const
+            ).map(({ key, label, data }) => {
+              const maxCount = data.reduce((m, d) => Math.max(m, d.count), 0);
+              const peak = data.reduce(
+                (best, d) => (d.count > best.count ? d : best),
+                { hour: -1, count: 0 }
+              );
+              const top3 = [...data].sort((a, b) => b.count - a.count).slice(0, 3);
+              const fmt = (h: number) => `${String(h).padStart(2, "0")}.00`;
+              const totalVisits = data.reduce((s, d) => s + d.count, 0);
+
+              return (
+                <Card key={key} className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      {label}
+                    </p>
+                    <span className="text-[10px] text-muted-foreground">{totalVisits} total visit</span>
+                  </div>
+
+                  {peak.hour >= 0 ? (
+                    <>
+                      <div className="flex items-end gap-3">
+                        <div>
+                          <p className="text-3xl font-bold text-primary leading-none">{fmt(peak.hour)}</p>
+                          <p className="text-[10px] text-muted-foreground mt-0.5">jam tersibuk • {peak.count} visit</p>
+                        </div>
+                        <div className="flex gap-1.5 flex-wrap pb-0.5">
+                          {top3.slice(1).map((d) => (
+                            <div key={d.hour} className="text-center">
+                              <p className="text-xs font-semibold">{fmt(d.hour)}</p>
+                              <p className="text-[9px] text-muted-foreground">{d.count} visit</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <p className="text-[9px] text-muted-foreground mb-1.5 uppercase tracking-wider">Distribusi per jam</p>
+                        <div className="flex items-end gap-px h-10">
+                          {Array.from({ length: 24 }, (_, h) => {
+                            const found = data.find((d) => d.hour === h);
+                            const count = found?.count ?? 0;
+                            const isPeak = h === peak.hour;
+                            const heightPct = maxCount > 0 ? Math.max(6, Math.round((count / maxCount) * 100)) : 6;
+                            return (
+                              <div
+                                key={h}
+                                className="flex-1 relative group"
+                                title={`${fmt(h)}: ${count} visit`}
+                              >
+                                <div
+                                  className={`w-full rounded-sm transition-all ${
+                                    isPeak
+                                      ? "bg-primary"
+                                      : count > 0
+                                      ? "bg-primary/30"
+                                      : "bg-muted"
+                                  }`}
+                                  style={{ height: count > 0 ? `${heightPct}%` : "4px" }}
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div className="flex justify-between mt-0.5">
+                          <span className="text-[8px] text-muted-foreground">00.00</span>
+                          <span className="text-[8px] text-muted-foreground">12.00</span>
+                          <span className="text-[8px] text-muted-foreground">23.00</span>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-xs text-muted-foreground py-3 text-center">Belum ada data kunjungan</p>
+                  )}
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="space-y-3">
         <div className="flex items-center justify-between">
