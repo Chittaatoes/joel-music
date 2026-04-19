@@ -68,7 +68,7 @@ const ketentuanList = [
   "Dilarang membawa makanan dan minuman ke dalam studio",
   "Kerusakan alat yang disebabkan oleh penyewa menjadi tanggung jawab penyewa",
   "Pembatalan booking harus dilakukan minimal 2 jam sebelum jadwal",
-  "Kapasitas maksimal studio adalah 6 orang",
+  "Kapasitas maksimal studio adalah 7 orang",
 ];
 
 function getToday() {
