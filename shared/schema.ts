@@ -189,3 +189,10 @@ export const pageViews = pgTable("page_views", {
 });
 
 export type PageView = typeof pageViews.$inferSelect;
+
+export const appSettings = pgTable("app_settings", {
+  key: varchar("key").primaryKey(),
+  value: text("value").notNull(),
+});
+
+export type AppSetting = typeof appSettings.$inferSelect;
