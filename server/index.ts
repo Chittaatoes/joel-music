@@ -17,6 +17,7 @@ import {
   migrateAndSeedServices,
   migrateAndSeedAdditionalEquipment,
   seedOperationalSchedule,
+  migrateAppSettings,
 } from "./seed";
 
 const app = express();
@@ -146,6 +147,7 @@ app.use((req, _res, next) => {
   await migrateAndSeedServices().catch((err) => console.error("Services seed error:", err));
   await migrateAndSeedAdditionalEquipment().catch((err) => console.error("Additional equipment seed error:", err));
   await seedOperationalSchedule().catch((err) => console.error("Operational schedule seed error:", err));
+  await migrateAppSettings().catch((err) => console.error("Migration app_settings error:", err));
 
   if (process.env.SEED === "true") {
     const { seedDatabase } = await import("./seed");
