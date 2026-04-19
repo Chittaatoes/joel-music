@@ -121,6 +121,28 @@ export default function BookingFormPage() {
   const [selectedEquipmentIds, setSelectedEquipmentIds] = useState<string[]>(
     () => equipmentParam ? equipmentParam.split(",").filter(Boolean) : []
   );
+
+  const [multiServicesState, setMultiServicesState] = useState<ExtraServiceItem[]>(() => {
+    if (_params.get("multi") !== "1") return [];
+    try {
+      const raw = sessionStorage.getItem("jms_multi_booking");
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      if (parsed.tanggal !== _params.get("tanggal")) return [];
+      return parsed.services as ExtraServiceItem[];
+    } catch { return []; }
+  });
+  const [multiGrandTotalState, setMultiGrandTotalState] = useState<number>(() => {
+    if (_params.get("multi") !== "1") return 0;
+    try {
+      const raw = sessionStorage.getItem("jms_multi_booking");
+      if (!raw) return 0;
+      const parsed = JSON.parse(raw);
+      if (parsed.tanggal !== _params.get("tanggal")) return 0;
+      return parsed.grandTotal as number;
+    } catch { return 0; }
+  });
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -158,20 +180,8 @@ export default function BookingFormPage() {
   const withKeyboard = _params.get("keyboard") === "1" && layananParam === "rehearsal";
   const isMultiMode = _params.get("multi") === "1";
 
-  const multiBookingSession = (() => {
-    try {
-      const raw = sessionStorage.getItem("jms_multi_booking");
-      if (!raw) return null;
-      const parsed = JSON.parse(raw);
-      if (parsed.tanggal !== _params.get("tanggal")) return null;
-      return parsed as { tanggal: string; services: ExtraServiceItem[]; grandTotal: number };
-    } catch {
-      return null;
-    }
-  })();
-
-  const multiServices: ExtraServiceItem[] = isMultiMode && multiBookingSession ? multiBookingSession.services : [];
-  const multiGrandTotal = isMultiMode && multiBookingSession ? multiBookingSession.grandTotal : 0;
+  const multiServices = multiServicesState;
+  const multiGrandTotal = multiGrandTotalState;
 
   const { data: serviceList = [] } = useQuery<Service[]>({
     queryKey: ["/api/services"],
