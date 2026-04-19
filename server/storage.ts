@@ -103,6 +103,10 @@ export interface IStorage {
     dailyLast7: { date: string; count: number }[];
     weeklyHomepage: { date: string; count: number; dayLabel: string }[];
   }>;
+  getHourlyStats(): Promise<{
+    homepage: { hour: number; count: number }[];
+    booking: { hour: number; count: number }[];
+  }>;
 }
 
 class DatabaseStorage implements IStorage {
@@ -380,8 +384,7 @@ class DatabaseStorage implements IStorage {
   }
 
   async trackPageView(page: string): Promise<void> {
-    const { start } = getJakartaDayBounds(getJakartaNow());
-    await db.insert(pageViews).values({ page, visitedAt: start });
+    await db.insert(pageViews).values({ page, visitedAt: getJakartaNow() });
   }
 
   async getPageViewStats(): Promise<{
@@ -472,6 +475,31 @@ class DatabaseStorage implements IStorage {
       dailyLast7,
       weeklyHomepage,
     };
+  }
+
+  async getHourlyStats(): Promise<{
+    homepage: { hour: number; count: number }[];
+    booking: { hour: number; count: number }[];
+  }> {
+    const toHourRows = async (page: string) => {
+      const rows = await db
+        .select({
+          hour: sql<number>`EXTRACT(HOUR FROM (visited_at + interval '7 hours'))::int`,
+          count: sql<number>`count(*)::int`,
+        })
+        .from(pageViews)
+        .where(eq(pageViews.page, page))
+        .groupBy(sql`EXTRACT(HOUR FROM (visited_at + interval '7 hours'))`)
+        .orderBy(sql`EXTRACT(HOUR FROM (visited_at + interval '7 hours'))`);
+      return rows.map((r) => ({ hour: Number(r.hour), count: Number(r.count) }));
+    };
+
+    const [homepage, booking] = await Promise.all([
+      toHourRows("/"),
+      toHourRows("/booking"),
+    ]);
+
+    return { homepage, booking };
   }
 }
 
