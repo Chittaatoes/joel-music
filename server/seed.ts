@@ -339,6 +339,25 @@ export async function migrateAndSeedAdditionalEquipment() {
   }
 }
 
+export async function migrateAppSettings() {
+  try {
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS app_settings (
+        key VARCHAR PRIMARY KEY,
+        value TEXT NOT NULL
+      )
+    `);
+    await db.execute(sql`
+      INSERT INTO app_settings (key, value)
+      VALUES ('minimalDP', '20000')
+      ON CONFLICT (key) DO NOTHING
+    `);
+    console.log("Migration: app_settings table ensured");
+  } catch (e) {
+    console.log("Migration: app_settings error:", e);
+  }
+}
+
 export async function seedOperationalSchedule() {
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS operational_schedule (
