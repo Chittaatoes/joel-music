@@ -3,7 +3,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import cors from "cors";
 import { registerRoutes } from "./routes";
 import { createServer } from "http";
-import { setupAuth } from "./auth";
+import { setupAuth, seedAdminUser } from "./auth";
 import {
   seedAdminTable,
   migrateBookingId,
@@ -144,6 +144,7 @@ app.use((req, _res, next) => {
     console.warn("migratePageViews is not defined");
   }
   await seedAdminTable().catch((err) => console.error("Admin seed error:", err));
+  await seedAdminUser().catch((err) => console.error("Admin user seed error:", err));
   await migrateAndSeedServices().catch((err) => console.error("Services seed error:", err));
   await migrateAndSeedAdditionalEquipment().catch((err) => console.error("Additional equipment seed error:", err));
   await seedOperationalSchedule().catch((err) => console.error("Operational schedule seed error:", err));
