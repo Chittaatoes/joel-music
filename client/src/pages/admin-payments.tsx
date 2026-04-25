@@ -529,10 +529,13 @@ export default function AdminPayments() {
       {/* Bukti Transfer Modal — fullscreen, works on iOS PWA */}
       {buktiModal && (
         <div
-          className="fixed inset-0 z-50 bg-black flex flex-col"
+          className="fixed inset-0 z-[200] bg-black flex flex-col"
           data-testid="modal-bukti-transfer"
         >
-          <div className="flex items-center gap-3 px-4 py-3 bg-black/80 shrink-0">
+          <div
+            className="flex items-center gap-3 px-4 pb-3 bg-black/80 shrink-0"
+            style={{ paddingTop: "max(12px, env(safe-area-inset-top))" }}
+          >
             <button
               onClick={() => setBuktiModal(null)}
               className="flex items-center gap-1.5 text-white/80 hover:text-white active:opacity-70 transition-opacity"
