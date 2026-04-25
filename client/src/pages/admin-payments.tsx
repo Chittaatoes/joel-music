@@ -27,6 +27,7 @@ import {
   ExternalLink,
   Trash2,
   Send,
+  ArrowLeft,
 } from "lucide-react";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
@@ -114,35 +115,11 @@ export default function AdminPayments() {
   const { toast } = useToast();
   const [statusFilter, setStatusFilter] = useState("all");
   const [deleteTarget, setDeleteTarget] = useState<Booking | null>(null);
+  const [buktiModal, setBuktiModal] = useState<string | null>(null);
 
   const openBukti = (base64: string) => {
-  const newTab = window.open();
-  if (newTab) {
-    newTab.document.write(`
-      <html>
-        <head>
-          <title>Bukti Transfer</title>
-          <style>
-            body {
-              margin:0;
-              display:flex;
-              justify-content:center;
-              align-items:center;
-              background:#111;
-            }
-            img {
-              max-width:100%;
-              max-height:100vh;
-            }
-          </style>
-        </head>
-        <body>
-          <img src="${base64}" />
-        </body>
-      </html>
-    `);
-  }
-};
+    setBuktiModal(base64);
+  };
 
   const { data: bookings = [], isLoading } = useQuery<Booking[]>({
     queryKey: ["/api/admin/bookings/all"],
@@ -548,6 +525,33 @@ export default function AdminPayments() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Bukti Transfer Modal — fullscreen, works on iOS PWA */}
+      {buktiModal && (
+        <div
+          className="fixed inset-0 z-50 bg-black flex flex-col"
+          data-testid="modal-bukti-transfer"
+        >
+          <div className="flex items-center gap-3 px-4 py-3 bg-black/80 shrink-0">
+            <button
+              onClick={() => setBuktiModal(null)}
+              className="flex items-center gap-1.5 text-white/80 hover:text-white active:opacity-70 transition-opacity"
+              data-testid="button-close-bukti"
+            >
+              <ArrowLeft className="h-5 w-5" />
+              <span className="text-sm font-medium">Kembali</span>
+            </button>
+            <span className="text-white/60 text-sm ml-auto">Bukti Transfer</span>
+          </div>
+          <div className="flex-1 flex items-center justify-center overflow-auto p-4">
+            <img
+              src={buktiModal}
+              alt="Bukti Transfer"
+              className="max-w-full max-h-full object-contain rounded"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
