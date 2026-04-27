@@ -1,6 +1,6 @@
 import { db } from "./db";
 import { bookings, dailyCost, admins, services, additionalEquipment } from "@shared/schema";
-import { sql, eq } from "drizzle-orm";
+import { sql, eq, ne } from "drizzle-orm";
 import { format, addDays } from "date-fns";
 import bcrypt from "bcryptjs";
 
@@ -223,6 +223,12 @@ export async function seedAdminTable() {
       await db.update(admins).set({ passwordHash: newHash }).where(eq(admins.username, adminUsername));
       console.log("Admin password updated");
     }
+  }
+
+  // Hapus semua admin lain yang bukan username aktif
+  const deleted = await db.delete(admins).where(ne(admins.username, adminUsername));
+  if ((deleted as any).rowCount > 0) {
+    console.log("Old admin accounts removed");
   }
 }
 
