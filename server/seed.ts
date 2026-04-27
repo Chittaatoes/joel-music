@@ -198,22 +198,29 @@ export async function seedAdminTable() {
     )
   `);
 
+  const adminUsername = process.env.ADMIN_USERNAME || "admin";
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  if (!adminPassword) {
+    console.warn("ADMIN_PASSWORD env var not set — skipping admin seed");
+    return;
+  }
+
   const [existing] = await db
     .select()
     .from(admins)
-    .where(eq(admins.username, "admin"));
+    .where(eq(admins.username, adminUsername));
 
-  const newHash = await bcrypt.hash("Joelmusicstudio26", 10);
+  const newHash = await bcrypt.hash(adminPassword, 10);
   if (!existing) {
     await db.insert(admins).values({
-      username: "admin",
+      username: adminUsername,
       passwordHash: newHash,
     });
-    console.log("Admin seeded: admin");
+    console.log("Admin seeded:", adminUsername);
   } else {
-    const isSame = await bcrypt.compare("Joelmusicstudio26", existing.passwordHash);
+    const isSame = await bcrypt.compare(adminPassword, existing.passwordHash);
     if (!isSame) {
-      await db.update(admins).set({ passwordHash: newHash }).where(eq(admins.username, "admin"));
+      await db.update(admins).set({ passwordHash: newHash }).where(eq(admins.username, adminUsername));
       console.log("Admin password updated");
     }
   }
