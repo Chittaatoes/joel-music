@@ -38,6 +38,7 @@ import {
   Mic,
   ImagePlus,
   Trash2,
+  ShieldCheck,
 } from "lucide-react";
 import { format, parse } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
@@ -121,6 +122,8 @@ export default function BookingFormPage() {
   const [selectedEquipmentIds, setSelectedEquipmentIds] = useState<string[]>(
     () => equipmentParam ? equipmentParam.split(",").filter(Boolean) : []
   );
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [termsModalOpen, setTermsModalOpen] = useState(false);
 
   const [multiServicesState, setMultiServicesState] = useState<ExtraServiceItem[]>(() => {
     if (_params.get("multi") !== "1") return [];
@@ -944,7 +947,28 @@ export default function BookingFormPage() {
                 <FormItem>
                   <FormLabel>Jumlah Person</FormLabel>
                   <FormControl>
-                    <Input type="number" min="1" max="7" placeholder="4" {...field} data-testid="input-person-count" />
+                    <Input
+                      type="number"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      min="1"
+                      max="7"
+                      placeholder="4"
+                      data-testid="input-person-count"
+                      {...field}
+                      onKeyDown={(e) => {
+                        const allowed = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab", "Home", "End"];
+                        if (!allowed.includes(e.key) && !/^[0-9]$/.test(e.key) && !e.metaKey && !e.ctrlKey) {
+                          e.preventDefault();
+                        }
+                      }}
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/[^0-9]/g, "");
+                        if (raw === "") { field.onChange(""); return; }
+                        const num = Math.min(7, Math.max(1, parseInt(raw)));
+                        field.onChange(String(num));
+                      }}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -987,9 +1011,191 @@ export default function BookingFormPage() {
               )}
             />
 
+            {/* Terms & Conditions */}
+            <div className="space-y-3 pt-1">
+              <div className="rounded-xl border border-amber-200 dark:border-amber-700/40 bg-amber-50/60 dark:bg-amber-950/20 p-4 space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                    <span className="text-sm font-semibold text-amber-800 dark:text-amber-300">Hal Penting yang Perlu Diketahui</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setTermsModalOpen(true)}
+                    className="text-[11px] font-medium text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-200 underline underline-offset-2 transition-colors whitespace-nowrap"
+                    data-testid="button-open-terms"
+                  >
+                    Lihat detail
+                  </button>
+                </div>
+                <ul className="space-y-2">
+                  {[
+                    "DP hangus jika tidak hadir atau membatalkan tanpa pemberitahuan",
+                    "Reschedule hanya 1×, maksimal 1 jam sebelum jadwal",
+                    "Keterlambatan tidak menambah durasi sesi",
+                    "Kerusakan fasilitas menjadi tanggung jawab pengguna",
+                  ].map((point, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm text-amber-700 dark:text-amber-300/90">
+                      <span className="mt-1 h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0" />
+                      {point}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <label className="flex items-start gap-3 cursor-pointer group" data-testid="label-terms">
+                <div className="relative mt-0.5 shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={termsAccepted}
+                    onChange={(e) => setTermsAccepted(e.target.checked)}
+                    className="peer sr-only"
+                    data-testid="checkbox-terms"
+                  />
+                  <div className="h-5 w-5 rounded border-2 border-input bg-background flex items-center justify-center transition-colors peer-checked:bg-primary peer-checked:border-primary group-hover:border-primary/60">
+                    {termsAccepted && (
+                      <svg className="h-3 w-3 text-primary-foreground" fill="none" viewBox="0 0 12 12">
+                        <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
+                  </div>
+                </div>
+                <span className="text-sm text-muted-foreground leading-snug select-none">
+                  Saya menyetujui{" "}
+                  <button
+                    type="button"
+                    onClick={(e) => { e.preventDefault(); setTermsModalOpen(true); }}
+                    className="text-primary font-medium underline underline-offset-2 hover:text-primary/80 transition-colors"
+                    data-testid="button-terms-link"
+                  >
+                    Syarat &amp; Ketentuan
+                  </button>{" "}
+                  Joel Music Studio
+                </span>
+              </label>
+            </div>
+
+            {/* Terms Modal */}
+            {termsModalOpen && (
+              <div
+                className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+                data-testid="modal-terms"
+              >
+                <div
+                  className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+                  onClick={() => setTermsModalOpen(false)}
+                />
+                <div className="relative z-10 w-full sm:max-w-lg bg-background rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[85vh]">
+                  <div className="flex items-center justify-between px-5 py-4 border-b shrink-0">
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="h-5 w-5 text-primary" />
+                      <span className="font-semibold text-base">Syarat &amp; Ketentuan</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setTermsModalOpen(false)}
+                      className="rounded-full p-1.5 hover:bg-muted transition-colors"
+                      data-testid="button-close-terms"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <div className="overflow-y-auto px-5 py-4 space-y-5 text-sm text-muted-foreground leading-relaxed">
+                    <p className="text-xs text-muted-foreground/60 italic">Joel Music Studio — Terakhir diperbarui: {format(new Date(), "dd MMMM yyyy", { locale: idLocale })}</p>
+
+                    {[
+                      {
+                        title: "Ketentuan Booking",
+                        items: [
+                          "Booking dilakukan melalui website resmi Joel Music Studio.",
+                          <>Jadwal dianggap <strong className="text-foreground">valid</strong> setelah pengguna melakukan pembayaran Down Payment (DP).</>,
+                          "Tanpa DP, slot waktu dapat diberikan kepada pengguna lain.",
+                        ],
+                      },
+                      {
+                        title: "Pembayaran (DP)",
+                        items: [
+                          "DP berfungsi sebagai tanda jadi dan pengunci jadwal studio.",
+                          "Besaran DP diinformasikan saat proses booking.",
+                          "Sisa pembayaran dapat dilakukan sebelum atau saat sesi dimulai.",
+                        ],
+                      },
+                      {
+                        title: "Pembatalan & No-Show",
+                        items: [
+                          <>Tidak hadir tanpa pemberitahuan → <strong className="text-foreground">DP hangus</strong>.</>,
+                          <>Membatalkan sepihak tanpa alasan jelas → <strong className="text-foreground">DP tetap hangus</strong>.</>,
+                        ],
+                      },
+                      {
+                        title: "Reschedule",
+                        items: [
+                          <>Reschedule diizinkan maksimal <strong className="text-foreground">1 (satu) kali</strong>.</>,
+                          <>Harus diajukan minimal <strong className="text-foreground">1 jam sebelum</strong> jadwal booking.</>,
+                          "Hanya bisa dilakukan jika slot baru tersedia.",
+                          "Setelah reschedule, tidak dapat ubah jadwal lagi.",
+                          <>Jika tetap tidak hadir setelah reschedule → <strong className="text-foreground">DP hangus</strong>.</>,
+                        ],
+                      },
+                      {
+                        title: "Keterlambatan",
+                        items: [
+                          <>Keterlambatan pengguna <strong className="text-foreground">tidak menambah durasi sesi</strong>.</>,
+                          "Waktu booking tetap mengikuti jadwal awal yang dipilih.",
+                        ],
+                      },
+                      {
+                        title: "Tanggung Jawab Pengguna",
+                        items: [
+                          "Pengguna wajib menjaga fasilitas studio dengan baik.",
+                          "Kerusakan akibat kelalaian pengguna menjadi tanggung jawab pengguna.",
+                        ],
+                      },
+                      {
+                        title: "Perubahan dari Pihak Studio",
+                        items: [
+                          "Studio berhak mengubah jadwal dalam kondisi force majeure / kendala teknis.",
+                          "Studio akan memberikan alternatif jadwal atau mengembalikan DP jika kesalahan berasal dari pihak studio.",
+                        ],
+                      },
+                    ].map((section) => (
+                      <div key={section.title}>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50 mb-2">{section.title}</p>
+                        <ul className="space-y-1.5">
+                          {section.items.map((item, i) => (
+                            <li key={i} className="flex items-start gap-2">
+                              <span className="mt-1.5 h-1 w-1 rounded-full bg-muted-foreground/40 shrink-0" />
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+
+                    <div className="border-t pt-4">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50 mb-2">Kontak</p>
+                      <p>Joel Music Studio</p>
+                      <p>WhatsApp: 0899-1601-137</p>
+                    </div>
+                  </div>
+                  <div className="px-5 py-4 border-t shrink-0">
+                    <Button
+                      type="button"
+                      className="w-full"
+                      onClick={() => { setTermsAccepted(true); setTermsModalOpen(false); }}
+                      data-testid="button-accept-terms"
+                    >
+                      Saya Setuju
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <Button
               type="submit"
               className="w-full"
+              disabled={!termsAccepted}
               data-testid="button-submit-booking"
             >
               <Send className="mr-2 h-4 w-4" />
