@@ -182,7 +182,20 @@ class DatabaseStorage implements IStorage {
 
   async checkSlotAvailability(tanggal: string, jamMulai: number, durasi: number): Promise<boolean> {
     const rows = await db.select().from(bookings).where(eq(bookings.tanggal, tanggal));
-    return rows.every((row) => jamMulai + durasi <= row.jamMulai || jamMulai >= row.jamMulai + row.durasi);
+    for (const row of rows) {
+      if (!(jamMulai + durasi <= row.jamMulai || jamMulai >= row.jamMulai + row.durasi)) {
+        return false;
+      }
+      const extraServices = (row.extraServices as any[] | null) || [];
+      for (const svc of extraServices) {
+        const svcTanggal = svc.tanggal || tanggal;
+        if (svcTanggal !== tanggal) continue;
+        if (!(jamMulai + durasi <= svc.jamMulai || jamMulai >= svc.jamMulai + svc.durasi)) {
+          return false;
+        }
+      }
+    }
+    return true;
   }
 
   async getOperationalSchedule(): Promise<OperationalSchedule[]> {
