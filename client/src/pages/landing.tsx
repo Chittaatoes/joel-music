@@ -342,7 +342,7 @@ export default function LandingPage() {
             <div className="flex items-center justify-center rounded-md bg-primary/10 p-2">
               <Users className="h-4 w-4 text-primary" />
             </div>
-            <p className="text-sm text-muted-foreground">Kapasitas maksimal <span className="font-medium text-foreground">6 orang</span></p>
+            <p className="text-sm text-muted-foreground">Kapasitas maksimal <span className="font-medium text-foreground">7 orang</span></p>
           </div>
         </section>
 
