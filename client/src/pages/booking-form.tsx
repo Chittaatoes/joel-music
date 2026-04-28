@@ -131,7 +131,7 @@ export default function BookingFormPage() {
       const raw = sessionStorage.getItem("jms_multi_booking");
       if (!raw) return [];
       const parsed = JSON.parse(raw);
-      if (parsed.tanggal !== _params.get("tanggal")) return [];
+      if (!Array.isArray(parsed.services) || parsed.services.length < 2) return [];
       return parsed.services as ExtraServiceItem[];
     } catch { return []; }
   });
@@ -141,7 +141,7 @@ export default function BookingFormPage() {
       const raw = sessionStorage.getItem("jms_multi_booking");
       if (!raw) return 0;
       const parsed = JSON.parse(raw);
-      if (parsed.tanggal !== _params.get("tanggal")) return 0;
+      if (!Array.isArray(parsed.services) || parsed.services.length < 2) return 0;
       return parsed.grandTotal as number;
     } catch { return 0; }
   });
