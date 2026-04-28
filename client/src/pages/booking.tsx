@@ -336,15 +336,16 @@ export default function BookingPage() {
     });
 
     const primaryService = extraServicesData[0];
+    const sessionTanggal = primaryService.tanggal || calendarDateStr;
 
     sessionStorage.setItem("jms_multi_booking", JSON.stringify({
-      tanggal: primaryService.tanggal,
+      tanggal: sessionTanggal,
       services: extraServicesData,
       grandTotal,
     }));
 
     const params = new URLSearchParams({
-      tanggal: primaryService.tanggal || calendarDateStr,
+      tanggal: sessionTanggal,
       jam: String(primaryService.jamMulai),
       durasi: String(primaryService.durasi),
       layanan: primaryService.key,
