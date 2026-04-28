@@ -1131,7 +1131,7 @@ export default function BookingFormPage() {
                         title: "Reschedule",
                         items: [
                           <>Reschedule diizinkan maksimal <strong className="text-foreground">1 (satu) kali</strong>.</>,
-                          <>Harus diajukan minimal <strong className="text-foreground">1 jam sebelum</strong> jadwal booking.</>,
+                          <>Harus diajukan maksimal <strong className="text-foreground">1 jam sebelum</strong> jadwal booking.</>,
                           "Hanya bisa dilakukan jika slot baru tersedia.",
                           "Setelah reschedule, tidak dapat ubah jadwal lagi.",
                           <>Jika tetap tidak hadir setelah reschedule → <strong className="text-foreground">DP hangus</strong>.</>,
