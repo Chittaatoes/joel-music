@@ -56,13 +56,22 @@ function getHoursForSchedule(openHour: number, closeHour: number): number[] {
   return Array.from({ length: last - openHour + 1 }, (_, i) => i + openHour);
 }
 
-function getSlotStatus(hour: number, bookings: Booking[]): "available" | "pending" | "confirmed" {
+function getSlotStatus(hour: number, bookings: Booking[], date: string): "available" | "pending" | "confirmed" {
   for (const b of bookings) {
     const start = b.jamMulai;
     const end = start + b.durasi;
     if (hour >= start && hour < end) {
       if (b.status === "confirmed") return "confirmed";
       if (b.status === "pending") return "pending";
+    }
+    const extraServices = (b.extraServices as any[] | null) || [];
+    for (const svc of extraServices) {
+      const svcTanggal = svc.tanggal || (b as any).tanggal || date;
+      if (svcTanggal !== date) continue;
+      if (hour >= svc.jamMulai && hour < svc.jamMulai + svc.durasi) {
+        if (b.status === "confirmed") return "confirmed";
+        if (b.status === "pending") return "pending";
+      }
     }
   }
   return "available";
@@ -197,7 +206,7 @@ export default function BookingPage() {
     return hours.map((hour) => {
       if (isTodayDate && hour <= currentHour) return { hour, status: "past" };
       if (localReserved.has(hour)) return { hour, status: "local" };
-      return { hour, status: getSlotStatus(hour, bookings) };
+      return { hour, status: getSlotStatus(hour, bookings, itemTanggal) };
     });
   }, [bookingsByDate, today, getLocallyReservedHoursForItem, getHoursForDate]);
 
@@ -225,7 +234,7 @@ export default function BookingPage() {
       const consecutive: number[] = [];
       for (let h = min; h <= max; h++) {
         if (localReserved.has(h)) return si;
-        const st = getSlotStatus(h, bookings);
+        const st = getSlotStatus(h, bookings, si.tanggal);
         if (st !== "available") return si;
         consecutive.push(h);
       }
