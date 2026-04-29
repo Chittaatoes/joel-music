@@ -1,3 +1,4 @@
+import { useState, useCallback, useRef } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
@@ -28,6 +29,7 @@ import {
   Package,
   ShieldCheck,
   Keyboard,
+  Home,
 } from "lucide-react";
 import { SiInstagram } from "react-icons/si";
 import type { Service, PricingTier } from "@shared/schema";
@@ -145,6 +147,97 @@ function getLowestPrice(services: Service[]): string {
   return min.toLocaleString("id-ID");
 }
 
+const PILL_BG     = "rgba(255,255,255,0.94)";
+const PILL_SHADOW = "0 -1px 0 rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.06), inset 0 0 0 0.5px rgba(0,0,0,0.07)";
+const ACTIVE_BG   = "rgba(20,160,153,0.11)";
+const ICON_ACTIVE = "hsl(187,80%,38%)";
+const ICON_MUTED  = "rgba(90,105,110,0.55)";
+
+const USER_TABS = [
+  { key: "home",    label: "Beranda", icon: Home,         path: "/" },
+  { key: "booking", label: "Booking", icon: Music,        path: "/booking" },
+  { key: "history", label: "Riwayat", icon: CalendarDays, path: "/history" },
+] as const;
+
+function MobileTabBar({ active }: { active: "home" | "booking" | "history" }) {
+  const [, navigate] = useLocation();
+  const [bouncing, setBouncing] = useState<string | null>(null);
+
+  const fire = useCallback((key: string, path: string) => {
+    setBouncing(key);
+    setTimeout(() => setBouncing(null), 480);
+    navigate(path);
+  }, [navigate]);
+
+  return (
+    <nav
+      className="fixed bottom-0 inset-x-0 z-50 md:hidden flex items-end px-3 mb-3"
+      style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+      data-testid="mobile-tab-bar"
+    >
+      <div
+        className="flex-1 flex items-center rounded-[50px] px-1 py-1.5"
+        style={{ background: PILL_BG, boxShadow: PILL_SHADOW }}
+      >
+        {USER_TABS.map((tab) => {
+          const isActive = active === tab.key;
+          const isBouncing = bouncing === tab.key;
+          return (
+            <button
+              key={tab.key}
+              data-testid={`tab-${tab.key}`}
+              onClick={() => fire(tab.key, tab.path)}
+              className="flex-1 flex flex-col items-center justify-center relative select-none"
+              style={{ WebkitTapHighlightColor: "transparent", minHeight: 50, touchAction: "manipulation" }}
+            >
+              {/* Active inner pill */}
+              <div
+                className="absolute inset-x-0.5 rounded-[44px] transition-all duration-200"
+                style={{
+                  top: -2,
+                  bottom: -2,
+                  background: isActive ? ACTIVE_BG : "transparent",
+                  opacity: isActive ? 1 : 0,
+                }}
+              />
+
+              {/* Icon */}
+              <div
+                className={`relative z-10 ${isBouncing ? "tab-icon-bounce" : ""}`}
+                style={{ willChange: "transform" }}
+              >
+                <tab.icon
+                  style={{
+                    width: 22,
+                    height: 22,
+                    color: isActive ? ICON_ACTIVE : ICON_MUTED,
+                    strokeWidth: isActive ? 2.3 : 1.7,
+                    transition: "color 0.18s ease, stroke-width 0.18s ease",
+                  }}
+                />
+              </div>
+
+              {/* Label */}
+              <span
+                className={`relative z-10 leading-none mt-1 ${isBouncing ? "tab-label-in" : ""}`}
+                style={{
+                  fontSize: 9.5,
+                  fontWeight: isActive ? 600 : 400,
+                  letterSpacing: 0.15,
+                  color: isActive ? ICON_ACTIVE : ICON_MUTED,
+                  transition: "color 0.18s ease",
+                }}
+              >
+                {tab.label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
+
 export default function LandingPage() {
   const [, navigate] = useLocation();
   const todayName = getToday();
@@ -172,6 +265,21 @@ export default function LandingPage() {
 
   const priceRows = buildPriceRows(services);
   const lowestPrice = getLowestPrice(services);
+
+  const logoTapCount = useRef(0);
+  const logoTapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleLogoTap = useCallback(() => {
+    logoTapCount.current += 1;
+    if (logoTapTimer.current) clearTimeout(logoTapTimer.current);
+    if (logoTapCount.current >= 5) {
+      logoTapCount.current = 0;
+      navigate("/admin");
+      return;
+    }
+    logoTapTimer.current = setTimeout(() => {
+      logoTapCount.current = 0;
+    }, 2000);
+  }, [navigate]);
 
   usePageMeta({
     title: "Joel Music Studio - Studio Musik Murah & Terdekat | Booking Online",
@@ -208,13 +316,36 @@ export default function LandingPage() {
         </p>
       </section>
 
-      <nav className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
-          <div className="flex items-center gap-2">
-            <img src={logoImage} alt="Joel Music Studio" className="h-8 w-8 rounded-md object-contain" />
+      {/* ── HEADER ── */}
+      <nav className="sticky top-0 z-40 border-b border-border/50 bg-background/90 backdrop-blur-lg">
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 h-14">
+          <div className="flex items-center gap-2.5">
+            <img
+              src={logoImage}
+              alt="Joel Music Studio"
+              className="h-8 w-8 rounded-xl object-contain select-none"
+              onClick={handleLogoTap}
+              style={{ WebkitTapHighlightColor: "transparent", cursor: "default" }}
+              data-testid="img-logo"
+            />
             <span className="font-semibold text-sm" data-testid="text-brand">Joel Music Studio</span>
           </div>
-          <div className="flex items-center gap-2">
+          {/* Mobile: status chip only */}
+          <div className="flex items-center gap-2 md:hidden">
+            {studioOpen ? (
+              <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 text-[10px] px-2 py-0.5 rounded-full" data-testid="badge-status-open-header">
+                <span className="mr-1 h-1.5 w-1.5 rounded-full bg-emerald-500 inline-block animate-pulse" />
+                Buka
+              </Badge>
+            ) : (
+              <Badge variant="destructive" className="text-[10px] px-2 py-0.5 rounded-full" data-testid="badge-status-closed-header">
+                <span className="mr-1 h-1.5 w-1.5 rounded-full bg-white inline-block" />
+                Tutup
+              </Badge>
+            )}
+          </div>
+          {/* Desktop: original nav buttons */}
+          <div className="hidden md:flex items-center gap-2">
             <Button
               size="sm"
               variant="outline"
@@ -231,6 +362,7 @@ export default function LandingPage() {
         </div>
       </nav>
 
+      {/* ── HERO ── */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0">
           <img
@@ -238,14 +370,39 @@ export default function LandingPage() {
             alt="Joel Music Studio"
             className="h-full w-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/60 to-black/40" />
+          {/* Mobile: heavier gradient at bottom for card readability */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/55 to-black/30 md:via-black/60 md:to-black/40" />
         </div>
-        <div className="relative mx-auto max-w-5xl px-4 py-20 sm:py-28">
+
+        {/* Mobile hero layout — info anchored at bottom */}
+        <div className="relative flex flex-col justify-end min-h-[58vh] md:hidden px-4 pb-7 pt-10">
+          <Badge variant="secondary" className="mb-3 self-start bg-white/15 text-white border-white/20 text-xs" data-testid="badge-price">
+            Mulai dari Rp {lowestPrice}
+          </Badge>
+          <h1 className="mb-2 text-[1.65rem] font-bold tracking-tight text-white leading-tight" data-testid="text-hero-title">
+            Joel Music Studio<br />& Recording
+          </h1>
+          <p className="mb-5 text-[13px] text-white/75 leading-relaxed max-w-xs">
+            Studio musik profesional di Tangerang. Rehearsal, Recording, Karaoke, dan Sewa Alat Musik.
+          </p>
+          <Button
+            size="lg"
+            className="w-full h-12 text-base font-semibold rounded-2xl shadow-lg"
+            onClick={() => navigate("/booking")}
+            data-testid="button-hero-booking"
+          >
+            Booking Sekarang
+            <ChevronRight className="ml-1 h-4 w-4" />
+          </Button>
+        </div>
+
+        {/* Desktop hero layout — original */}
+        <div className="relative hidden md:block mx-auto max-w-5xl px-4 py-20 sm:py-28">
           <div className="max-w-xl">
-            <Badge variant="secondary" className="mb-4 bg-white/15 text-white border-white/20" data-testid="badge-price">
+            <Badge variant="secondary" className="mb-4 bg-white/15 text-white border-white/20" data-testid="badge-price-desktop">
               Mulai dari Rp {lowestPrice}
             </Badge>
-            <h1 className="mb-3 text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl" data-testid="text-hero-title">
+            <h1 className="mb-3 text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl">
               Joel Music Studio & Recording
             </h1>
             <p className="mb-6 text-base text-white/80 sm:text-lg">
@@ -253,7 +410,7 @@ export default function LandingPage() {
               Booking online, bayar mudah via QRIS.
             </p>
             <div className="flex flex-wrap items-center gap-3">
-              <Button size="lg" onClick={() => navigate("/booking")} data-testid="button-hero-booking">
+              <Button size="lg" onClick={() => navigate("/booking")} data-testid="button-hero-booking-desktop">
                 Booking Sekarang
                 <ChevronRight className="ml-1 h-4 w-4" />
               </Button>
@@ -273,10 +430,14 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <div id="info-section" className="mx-auto max-w-5xl px-4 py-8 space-y-6">
+
+      {/* ── MAIN CONTENT ── */}
+      <div id="info-section" className="mx-auto max-w-5xl px-4 py-5 md:py-8 space-y-6 md:pb-8">
+
+        {/* Layanan */}
         <section>
-          <h2 className="mb-4 text-lg font-semibold flex items-center gap-2" data-testid="text-section-services">
-            <Music className="h-5 w-5 text-muted-foreground" />
+          <h2 className="mb-3 text-base font-semibold flex items-center gap-2 md:text-lg md:mb-4" data-testid="text-section-services">
+            <Music className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
             Layanan Kami
           </h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -296,23 +457,26 @@ export default function LandingPage() {
 
         <StudioGallery onBook={() => navigate("/booking")} />
 
+        {/* Daftar Harga */}
         <section>
-          <h2 className="mb-4 text-lg font-semibold flex items-center gap-2" data-testid="text-section-pricing">
-            <Music className="h-5 w-5 text-muted-foreground" />
+          <h2 className="mb-3 text-base font-semibold flex items-center gap-2 md:text-lg md:mb-4" data-testid="text-section-pricing">
+            <Music className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
             Daftar Harga
           </h2>
           {loadingServices ? (
             <div className="space-y-2">
               {Array.from({ length: 5 }).map((_, i) => (
-                <Skeleton key={i} className="h-12 rounded-lg" />
+                <Skeleton key={i} className="h-12 rounded-xl" />
               ))}
             </div>
           ) : (
-            <Card className="p-0 overflow-hidden">
+            <div className="rounded-2xl overflow-hidden border border-border/60 bg-card">
               {priceRows.map((item, i) => (
                 <div
                   key={`${item.name}-${i}`}
-                  className={`flex items-start justify-between gap-3 px-4 py-3 ${i < priceRows.length - 1 ? "border-b" : ""} ${item.promo ? "bg-[hsl(45_85%_55%/0.08)]" : ""}`}
+                  className={`flex items-start justify-between gap-3 px-4 py-3.5 ${
+                    i < priceRows.length - 1 ? "border-b border-border/50" : ""
+                  } ${item.promo ? "bg-[hsl(45_85%_55%/0.08)]" : ""}`}
                   data-testid={`row-price-${i}`}
                 >
                   <div className="min-w-0">
@@ -336,40 +500,47 @@ export default function LandingPage() {
                   </div>
                 </div>
               ))}
-            </Card>
+            </div>
           )}
-          <div className="mt-3 flex items-center gap-3">
-            <div className="flex items-center justify-center rounded-md bg-primary/10 p-2">
+          <div className="mt-3 flex items-center gap-2.5">
+            <div className="flex items-center justify-center rounded-xl bg-primary/10 p-2">
               <Users className="h-4 w-4 text-primary" />
             </div>
             <p className="text-sm text-muted-foreground">Kapasitas maksimal <span className="font-medium text-foreground">7 orang</span></p>
           </div>
         </section>
 
+        {/* Fasilitas */}
         <section>
-          <h2 className="mb-4 text-lg font-semibold flex items-center gap-2" data-testid="text-section-facilities">
-            <Headphones className="h-5 w-5 text-muted-foreground" />
+          <h2 className="mb-3 text-base font-semibold flex items-center gap-2 md:text-lg md:mb-4" data-testid="text-section-facilities">
+            <Headphones className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
             Fasilitas Studio
           </h2>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="grid grid-cols-3 gap-2.5 md:gap-3">
             {facilities.map((fac) => (
-              <Card key={fac.name} className="flex items-center gap-3 p-4" data-testid={`card-facility-${fac.name.toLowerCase().replace(/\s+/g, "-")}`}>
-                <div className="flex items-center justify-center rounded-md bg-primary/10 p-2">
+              <div
+                key={fac.name}
+                className="flex flex-col items-center gap-2 p-3.5 rounded-2xl bg-card border border-border/50 md:flex-row md:gap-3 md:p-4"
+                data-testid={`card-facility-${fac.name.toLowerCase().replace(/\s+/g, "-")}`}
+              >
+                <div className="flex items-center justify-center rounded-xl bg-primary/10 p-2.5 md:p-2">
                   <fac.icon className="h-5 w-5 text-primary" />
                 </div>
-                <span className="text-sm font-medium">{fac.name}</span>
-              </Card>
+                <span className="text-[11px] font-medium text-center leading-snug md:text-sm md:text-left">{fac.name}</span>
+              </div>
             ))}
           </div>
         </section>
 
+        {/* Jam Operasional */}
         <section>
-          <h2 className="mb-4 text-lg font-semibold flex items-center gap-2" data-testid="text-section-hours">
-            <Clock className="h-5 w-5 text-muted-foreground" />
+          <h2 className="mb-3 text-base font-semibold flex items-center gap-2 md:text-lg md:mb-4" data-testid="text-section-hours">
+            <Clock className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
             Jam Operasional
           </h2>
-          <Card className="p-4">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="rounded-2xl overflow-hidden border border-border/60 bg-card">
+            {/* Status bar */}
+            <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-border/50">
               <div className="flex items-center gap-2">
                 {studioOpen ? (
                   <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/25" data-testid="badge-status-open">
@@ -383,13 +554,13 @@ export default function LandingPage() {
                   </Badge>
                 )}
                 {todaySchedule && todaySchedule.isOpen && (
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-xs text-muted-foreground">
                     {formatScheduleHours(todaySchedule.openHour, todaySchedule.closeHour)} WIB
                   </span>
                 )}
               </div>
             </div>
-            <div className="space-y-1.5">
+            <div>
               {[1, 2, 3, 4, 5, 6, 0].map((dow) => {
                 const item = scheduleRaw.find((s) => s.dayOfWeek === dow);
                 const dayName = DAY_NAMES[dow];
@@ -397,18 +568,19 @@ export default function LandingPage() {
                 return (
                   <div
                     key={dow}
-                    className={`flex items-center justify-between rounded-md px-3 py-2 text-sm ${
-                      isCurrentDay ? "bg-primary/8 font-medium" : ""
+                    className={`flex items-center justify-between px-4 py-3 text-sm border-b border-border/30 last:border-0 ${
+                      isCurrentDay ? "bg-primary/5" : ""
                     }`}
                     data-testid={`row-schedule-${dayName.toLowerCase()}`}
                   >
-                    <span className={isCurrentDay ? "text-foreground" : "text-muted-foreground"}>
+                    <span className={`font-medium ${isCurrentDay ? "text-primary" : "text-muted-foreground"}`}>
                       {dayName}
+                      {isCurrentDay && <span className="ml-1.5 text-[10px] font-normal text-primary/70">Hari ini</span>}
                     </span>
                     <span className={
                       item && !item.isOpen
-                        ? "text-red-500 dark:text-red-400"
-                        : isCurrentDay ? "text-foreground" : "text-muted-foreground"
+                        ? "text-red-500 dark:text-red-400 text-xs"
+                        : isCurrentDay ? "text-foreground font-medium text-xs" : "text-muted-foreground text-xs"
                     }>
                       {item
                         ? item.isOpen
@@ -420,12 +592,13 @@ export default function LandingPage() {
                 );
               })}
             </div>
-          </Card>
+          </div>
         </section>
 
+        {/* Lokasi & Kontak */}
         <section>
-          <h2 className="mb-4 text-lg font-semibold flex items-center gap-2" data-testid="text-section-location">
-            <MapPin className="h-5 w-5 text-muted-foreground" />
+          <h2 className="mb-3 text-base font-semibold flex items-center gap-2 md:text-lg md:mb-4" data-testid="text-section-location">
+            <MapPin className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
             Lokasi
           </h2>
           <Card className="p-4">
@@ -475,9 +648,10 @@ export default function LandingPage() {
           </Card>
         </section>
 
+        {/* Ketentuan */}
         <section>
-          <h2 className="mb-4 text-lg font-semibold flex items-center gap-2" data-testid="text-section-terms">
-            <FileText className="h-5 w-5 text-muted-foreground" />
+          <h2 className="mb-3 text-base font-semibold flex items-center gap-2 md:text-lg md:mb-4" data-testid="text-section-terms">
+            <FileText className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
             Ketentuan
           </h2>
           <Card className="p-4">
@@ -492,7 +666,8 @@ export default function LandingPage() {
           </Card>
         </section>
 
-        <div className="pb-4 flex flex-col gap-3 sm:flex-row">
+        {/* Desktop-only bottom CTA */}
+        <div className="hidden md:flex pb-4 flex-col gap-3 sm:flex-row">
           <Button className="flex-1" size="lg" onClick={() => navigate("/booking")} data-testid="button-bottom-booking">
             <Music className="mr-2 h-4 w-4" />
             Booking Sekarang
@@ -510,7 +685,8 @@ export default function LandingPage() {
         </div>
       </div>
 
-      <footer className="border-t bg-card/50 py-6">
+      {/* ── DESKTOP FOOTER ── */}
+      <footer className="hidden md:block border-t bg-card/50 py-6">
         <div className="mx-auto max-w-5xl px-4 text-center space-y-3">
           <p className="text-sm font-medium" data-testid="text-footer-brand">Joel Music Studio & Recording</p>
           <div className="flex items-center justify-center gap-4">
@@ -524,6 +700,12 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+
+      {/* Spacer for floating tab bar clearance on mobile */}
+      <div className="md:hidden pb-[76px]" />
+
+      {/* ── MOBILE BOTTOM TAB BAR ── */}
+      <MobileTabBar active="home" />
     </div>
   );
 }
