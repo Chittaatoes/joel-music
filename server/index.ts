@@ -1,6 +1,8 @@
 import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
 import cors from "cors";
+import path from "path";
+import fs from "fs";
 import { registerRoutes } from "./routes";
 import { createServer } from "http";
 import { setupAuth, seedAdminUser } from "./auth";
@@ -18,6 +20,8 @@ import {
   migrateAndSeedAdditionalEquipment,
   seedOperationalSchedule,
   migrateAppSettings,
+  migrateFoodOrders,
+  migrateFoodMenu,
 } from "./seed";
 
 const app = express();
@@ -149,6 +153,8 @@ app.use((req, _res, next) => {
   await migrateAndSeedAdditionalEquipment().catch((err) => console.error("Additional equipment seed error:", err));
   await seedOperationalSchedule().catch((err) => console.error("Operational schedule seed error:", err));
   await migrateAppSettings().catch((err) => console.error("Migration app_settings error:", err));
+  await migrateFoodOrders().catch((err) => console.error("Migration food_orders error:", err));
+  await migrateFoodMenu().catch((err) => console.error("Migration food_menu error:", err));
 
   if (process.env.SEED === "true") {
     const { seedDatabase } = await import("./seed");
@@ -183,6 +189,14 @@ app.use((req, _res, next) => {
   if (process.env.NODE_ENV === "development") {
     const { setupVite } = await import("./vite");
     await setupVite(httpServer, app);
+  } else {
+    const clientDist = path.resolve(process.cwd(), "client", "dist");
+    if (fs.existsSync(clientDist)) {
+      app.use(express.static(clientDist));
+      app.get("/{*path}", (_req, res) => {
+        res.sendFile(path.join(clientDist, "index.html"));
+      });
+    }
   }
 
   const port = parseInt(process.env.PORT || "5000", 10);
