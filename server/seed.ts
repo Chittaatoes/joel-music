@@ -352,6 +352,59 @@ export async function migrateAndSeedAdditionalEquipment() {
   }
 }
 
+export async function migrateFoodMenu() {
+  try {
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS food_menu (
+        id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+        name TEXT NOT NULL,
+        price INTEGER NOT NULL,
+        category TEXT NOT NULL DEFAULT 'minuman',
+        emoji TEXT NOT NULL DEFAULT '🍽️',
+        is_active BOOLEAN NOT NULL DEFAULT true,
+        options JSONB NOT NULL DEFAULT '[]'::jsonb,
+        sort_order INTEGER NOT NULL DEFAULT 0
+      )
+    `);
+
+    const existing = await db.execute(sql`SELECT COUNT(*) FROM food_menu`);
+    const count = Number((existing.rows[0] as any).count);
+    if (count === 0) {
+      await db.execute(sql`
+        INSERT INTO food_menu (name, price, category, emoji, is_active, options, sort_order) VALUES
+        ('Air Mineral', 5000, 'minuman', '💧', true, '[{"key":"temp","label":"Suhu","type":"select","choices":["Dingin","Biasa"]}]'::jsonb, 0),
+        ('Teh Manis', 7000, 'minuman', '🧋', true, '[{"key":"temp","label":"Suhu","type":"select","choices":["Ice","Hot"]}]'::jsonb, 1),
+        ('Indomie', 12000, 'makanan', '🍜', true, '[{"key":"type","label":"Pilihan Indomie","type":"select","choices":["Goreng","Kuah","Soto","Kari"]},{"key":"egg","label":"+Telur","type":"toggle","priceAdd":3000}]'::jsonb, 2)
+      `);
+      console.log("Migration: food_menu seeded with default items");
+    } else {
+      console.log("Migration: food_menu table ensured");
+    }
+  } catch (e) {
+    console.log("Migration: food_menu error:", e);
+  }
+}
+
+export async function migrateFoodOrders() {
+  try {
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS food_orders (
+        id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+        nama_band TEXT NOT NULL,
+        items JSONB NOT NULL,
+        total INTEGER NOT NULL,
+        serving_time TEXT NOT NULL DEFAULT 'sekarang',
+        payment_method TEXT NOT NULL DEFAULT 'cash',
+        status TEXT NOT NULL DEFAULT 'pending',
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+    console.log("Migration: food_orders table ensured");
+  } catch (e) {
+    console.log("Migration: food_orders error:", e);
+  }
+}
+
 export async function migrateAppSettings() {
   try {
     await db.execute(sql`
