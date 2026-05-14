@@ -179,9 +179,9 @@ export default function FoodOrderPage() {
       {step === "band" && (
         <div className="flex-1 px-4 py-5 space-y-4 max-w-lg mx-auto w-full">
           <div>
-            <h2 className="font-bold text-lg">Pilih Band Kamu</h2>
+            <h2 className="font-bold text-lg">Kamu dari band mana?</h2>
             <p className="text-xs text-muted-foreground mt-1">
-              Hanya band dengan booking terkonfirmasi hari ini yang bisa memesan.
+              Pilih nama band kamu dari daftar yang sedang booking studio hari ini.
             </p>
           </div>
 
@@ -196,9 +196,9 @@ export default function FoodOrderPage() {
           {!isLoading && todayBookings.length === 0 && (
             <Card className="p-6 text-center space-y-3">
               <Users className="h-10 w-10 text-muted-foreground mx-auto" />
-              <p className="font-medium text-sm">Tidak ada booking hari ini</p>
+              <p className="font-medium text-sm">Belum ada band yang sesi hari ini</p>
               <p className="text-xs text-muted-foreground">
-                Hanya band dengan booking yang sudah dikonfirmasi oleh admin pada hari ini yang dapat memesan makanan & minuman.
+                Order makanan & minuman hanya tersedia untuk band yang bookingnya sudah dikonfirmasi admin pada hari ini.
               </p>
               <Button size="sm" variant="outline" onClick={() => navigate("/booking")}>
                 Booking Studio Dulu
