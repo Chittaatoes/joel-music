@@ -196,3 +196,55 @@ export const appSettings = pgTable("app_settings", {
 });
 
 export type AppSetting = typeof appSettings.$inferSelect;
+
+export type MenuOptionGroup = {
+  key: string;
+  label: string;
+  type: "select" | "toggle";
+  choices?: string[];
+  priceAdd?: number;
+};
+
+export const foodMenu = pgTable("food_menu", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  price: integer("price").notNull(),
+  category: text("category").notNull().default("minuman"),
+  emoji: text("emoji").notNull().default("🍽️"),
+  isActive: boolean("is_active").notNull().default(true),
+  options: jsonb("options").$type<MenuOptionGroup[]>().notNull().default(sql`'[]'::jsonb`),
+  sortOrder: integer("sort_order").notNull().default(0),
+});
+
+export const insertFoodMenuSchema = createInsertSchema(foodMenu).omit({ id: true });
+export type FoodMenuItem = typeof foodMenu.$inferSelect;
+export type InsertFoodMenuItem = z.infer<typeof insertFoodMenuSchema>;
+
+export type FoodOrderItem = {
+  id: string;
+  name: string;
+  price: number;
+  qty: number;
+  emoji: string;
+  selectedOptions?: Record<string, string>;
+};
+
+export const foodOrders = pgTable("food_orders", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  namaBand: text("nama_band").notNull(),
+  items: jsonb("items").$type<FoodOrderItem[]>().notNull(),
+  total: integer("total").notNull(),
+  servingTime: text("serving_time").notNull().default("sekarang"),
+  paymentMethod: text("payment_method").notNull().default("cash"),
+  status: text("status").notNull().default("pending"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertFoodOrderSchema = createInsertSchema(foodOrders).omit({
+  id: true,
+  createdAt: true,
+  status: true,
+});
+
+export type FoodOrder = typeof foodOrders.$inferSelect;
+export type InsertFoodOrder = z.infer<typeof insertFoodOrderSchema>;
