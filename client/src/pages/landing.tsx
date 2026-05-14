@@ -30,6 +30,7 @@ import {
   ShieldCheck,
   Keyboard,
   Home,
+  CupSoda,
 } from "lucide-react";
 import { SiInstagram } from "react-icons/si";
 import type { Service, PricingTier } from "@shared/schema";
@@ -171,10 +172,11 @@ function MobileTabBar({ active }: { active: "home" | "booking" | "history" }) {
 
   return (
     <nav
-      className="fixed bottom-0 inset-x-0 z-50 md:hidden flex items-end px-3 mb-3"
+      className="fixed bottom-0 inset-x-0 z-50 md:hidden flex items-end px-3 mb-3 gap-2"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       data-testid="mobile-tab-bar"
     >
+      {/* Main tab pill */}
       <div
         className="flex-1 flex items-center rounded-[50px] px-1 py-1.5"
         style={{ background: PILL_BG, boxShadow: PILL_SHADOW }}
@@ -234,6 +236,42 @@ function MobileTabBar({ active }: { active: "home" | "booking" | "history" }) {
           );
         })}
       </div>
+
+      {/* Food / Drinks separate pill */}
+      <button
+        data-testid="tab-food"
+        onClick={() => navigate("/food")}
+        className="flex flex-col items-center justify-center rounded-[50px] select-none shrink-0"
+        style={{
+          background: PILL_BG,
+          boxShadow: PILL_SHADOW,
+          WebkitTapHighlightColor: "transparent",
+          touchAction: "manipulation",
+          minHeight: 58,
+          width: 58,
+        }}
+      >
+        <CupSoda
+          style={{
+            width: 22,
+            height: 22,
+            color: ICON_MUTED,
+            strokeWidth: 1.7,
+          }}
+        />
+        <span
+          style={{
+            fontSize: 9.5,
+            fontWeight: 400,
+            letterSpacing: 0.15,
+            color: ICON_MUTED,
+            marginTop: 3,
+            lineHeight: 1,
+          }}
+        >
+          Order
+        </span>
+      </button>
     </nav>
   );
 }
