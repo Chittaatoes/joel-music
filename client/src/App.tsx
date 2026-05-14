@@ -10,6 +10,7 @@ import LandingPage from "@/pages/landing";
 import BookingPage from "@/pages/booking";
 import BookingFormPage from "@/pages/booking-form";
 import HistoryPage from "@/pages/history";
+import FoodOrderPage from "@/pages/food-order";
 import AdminLoginPage from "@/pages/admin-login";
 
 const AdminDashboard = lazy(() => import("@/pages/admin-dashboard"));
@@ -59,6 +60,7 @@ function Router() {
         <Route path="/booking" component={BookingPage} />
         <Route path="/booking/form" component={BookingFormPage} />
         <Route path="/history" component={HistoryPage} />
+        <Route path="/food" component={FoodOrderPage} />
 
         <Route path="/admin/dashboard">
           <AdminLayout>
