@@ -11,6 +11,8 @@ import {
   pushSubscriptions,
   pageViews,
   appSettings,
+  foodOrders,
+  foodMenu,
   type Booking,
   type InsertBooking,
   type DailyCost,
@@ -22,6 +24,10 @@ import {
   type OperationalSchedule,
   type GalleryItem,
   type InsertGalleryItem,
+  type FoodOrder,
+  type InsertFoodOrder,
+  type FoodMenuItem,
+  type InsertFoodMenuItem,
 } from "@shared/schema";
 
 const JAKARTA_OFFSET_MS = 7 * 60 * 60 * 1000;
@@ -110,6 +116,15 @@ export interface IStorage {
   }>;
   getSetting(key: string): Promise<string | null>;
   upsertSetting(key: string, value: string): Promise<void>;
+  createFoodOrder(data: InsertFoodOrder): Promise<FoodOrder>;
+  getAllFoodOrders(): Promise<FoodOrder[]>;
+  updateFoodOrderStatus(id: string, status: string): Promise<FoodOrder | undefined>;
+  deleteFoodOrder(id: string): Promise<boolean>;
+  getAllFoodMenu(): Promise<FoodMenuItem[]>;
+  getActiveFoodMenu(): Promise<FoodMenuItem[]>;
+  createFoodMenuItem(data: InsertFoodMenuItem): Promise<FoodMenuItem>;
+  updateFoodMenuItem(id: string, data: Partial<InsertFoodMenuItem>): Promise<FoodMenuItem | undefined>;
+  deleteFoodMenuItem(id: string): Promise<boolean>;
 }
 
 class DatabaseStorage implements IStorage {
@@ -526,6 +541,48 @@ class DatabaseStorage implements IStorage {
   async upsertSetting(key: string, value: string): Promise<void> {
     await db.insert(appSettings).values({ key, value })
       .onConflictDoUpdate({ target: appSettings.key, set: { value } });
+  }
+
+  async createFoodOrder(data: InsertFoodOrder): Promise<FoodOrder> {
+    const [row] = await db.insert(foodOrders).values(data).returning();
+    return row;
+  }
+
+  async getAllFoodOrders(): Promise<FoodOrder[]> {
+    return db.select().from(foodOrders).orderBy(sql`created_at DESC`);
+  }
+
+  async updateFoodOrderStatus(id: string, status: string): Promise<FoodOrder | undefined> {
+    const [row] = await db.update(foodOrders).set({ status }).where(eq(foodOrders.id, id)).returning();
+    return row;
+  }
+
+  async deleteFoodOrder(id: string): Promise<boolean> {
+    const result = await db.delete(foodOrders).where(eq(foodOrders.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async getAllFoodMenu(): Promise<FoodMenuItem[]> {
+    return db.select().from(foodMenu).orderBy(foodMenu.sortOrder);
+  }
+
+  async getActiveFoodMenu(): Promise<FoodMenuItem[]> {
+    return db.select().from(foodMenu).where(eq(foodMenu.isActive, true)).orderBy(foodMenu.sortOrder);
+  }
+
+  async createFoodMenuItem(data: InsertFoodMenuItem): Promise<FoodMenuItem> {
+    const [row] = await db.insert(foodMenu).values(data).returning();
+    return row;
+  }
+
+  async updateFoodMenuItem(id: string, data: Partial<InsertFoodMenuItem>): Promise<FoodMenuItem | undefined> {
+    const [row] = await db.update(foodMenu).set(data).where(eq(foodMenu.id, id)).returning();
+    return row;
+  }
+
+  async deleteFoodMenuItem(id: string): Promise<boolean> {
+    const result = await db.delete(foodMenu).where(eq(foodMenu.id, id));
+    return (result.rowCount ?? 0) > 0;
   }
 }
 
