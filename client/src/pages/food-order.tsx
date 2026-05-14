@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft,
@@ -19,6 +20,7 @@ import {
   Banknote,
   CreditCard,
   X,
+  Pencil,
 } from "lucide-react";
 
 const logoImage = "/images/logo.png";
@@ -69,6 +71,8 @@ export default function FoodOrderPage() {
 
   const [step, setStep] = useState<Step>("band");
   const [selectedBand, setSelectedBand] = useState<string>("");
+  const [manualBand, setManualBand] = useState<string>("");
+  const [showManualInput, setShowManualInput] = useState(false);
   const [cart, setCart] = useState<Map<string, number>>(new Map());
   const [servingTime, setServingTime] = useState<ServingTime>("sekarang");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
@@ -177,76 +181,103 @@ export default function FoodOrderPage() {
 
       {/* ── STEP: BAND ── */}
       {step === "band" && (
-        <div className="flex-1 px-4 py-5 space-y-4 max-w-lg mx-auto w-full">
+        <div className="flex-1 px-4 py-5 space-y-5 max-w-lg mx-auto w-full">
           <div>
-            <h2 className="font-bold text-lg">Kamu dari band mana?</h2>
+            <h2 className="font-bold text-lg">Sudah booking studio hari ini?</h2>
             <p className="text-xs text-muted-foreground mt-1">
-              Pilih nama band kamu dari daftar yang sedang booking studio hari ini.
+              Pilih nama band kamu dari daftar di bawah, atau ketik nama band secara manual.
             </p>
           </div>
 
           {isLoading && (
-            <div className="space-y-3">
+            <div className="flex flex-wrap gap-2">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-16 rounded-xl bg-muted animate-pulse" />
+                <div key={i} className="h-9 w-28 rounded-full bg-muted animate-pulse" />
               ))}
             </div>
           )}
 
-          {!isLoading && todayBookings.length === 0 && (
-            <Card className="p-6 text-center space-y-3">
-              <Users className="h-10 w-10 text-muted-foreground mx-auto" />
-              <p className="font-medium text-sm">Belum ada band yang sesi hari ini</p>
-              <p className="text-xs text-muted-foreground">
-                Order makanan & minuman hanya tersedia untuk band yang bookingnya sudah dikonfirmasi admin pada hari ini.
-              </p>
-              <Button size="sm" variant="outline" onClick={() => navigate("/booking")}>
-                Booking Studio Dulu
-              </Button>
-            </Card>
-          )}
-
           {!isLoading && todayBookings.length > 0 && (
-            <div className="space-y-2">
-              {todayBookings.map((b, i) => {
-                const jamEnd = b.jamMulai + b.durasi;
-                const isSelected = selectedBand === b.namaBand;
-                return (
-                  <button
-                    key={i}
-                    className={`w-full text-left rounded-xl border-2 p-4 transition-all duration-150 ${
-                      isSelected
-                        ? "border-teal-500 bg-teal-50 dark:bg-teal-950/30"
-                        : "border-border bg-card hover:border-teal-300"
-                    }`}
-                    onClick={() => setSelectedBand(b.namaBand)}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-semibold text-sm">{b.namaBand}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {b.jamMulai.toString().padStart(2,"0")}:00 – {jamEnd.toString().padStart(2,"0")}:00
-                        </p>
-                      </div>
-                      {isSelected && <CheckCircle2 className="h-5 w-5 text-teal-500 shrink-0" />}
-                    </div>
-                  </button>
-                );
-              })}
+            <div className="space-y-3">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                Booking hari ini
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {todayBookings.map((b, i) => {
+                  const jamEnd = b.jamMulai + b.durasi;
+                  const isSelected = selectedBand === b.namaBand && !showManualInput;
+                  return (
+                    <button
+                      key={i}
+                      data-testid={`suggestion-band-${i}`}
+                      onClick={() => {
+                        setSelectedBand(b.namaBand);
+                        setManualBand("");
+                        setShowManualInput(false);
+                      }}
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-all duration-150 ${
+                        isSelected
+                          ? "border-teal-500 bg-teal-500 text-white"
+                          : "border-border bg-card hover:border-teal-400 hover:bg-teal-50 dark:hover:bg-teal-950/20"
+                      }`}
+                    >
+                      {isSelected && <CheckCircle2 className="h-3.5 w-3.5" />}
+                      <span>{b.namaBand}</span>
+                      <span className="text-[10px] opacity-70">
+                        {b.jamMulai.toString().padStart(2,"0")}–{jamEnd.toString().padStart(2,"0")}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
 
-          {todayBookings.length > 0 && (
-            <Button
-              className="w-full bg-teal-600 hover:bg-teal-700 text-white"
-              disabled={!selectedBand}
-              onClick={() => setStep("menu")}
-            >
-              Lanjut ke Menu
-              <ChevronRight className="ml-1 h-4 w-4" />
-            </Button>
+          {!isLoading && todayBookings.length === 0 && (
+            <Card className="p-4 border-dashed">
+              <p className="text-xs text-muted-foreground text-center">
+                Belum ada booking hari ini yang terdaftar.
+              </p>
+            </Card>
           )}
+
+          <div className="space-y-2">
+            <button
+              data-testid="toggle-manual-input"
+              onClick={() => {
+                setShowManualInput((v) => !v);
+                if (!showManualInput) setSelectedBand("");
+              }}
+              className="flex items-center gap-1.5 text-xs text-teal-600 dark:text-teal-400 font-medium"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+              {showManualInput ? "Batal ketik manual" : "Nama band tidak ada di daftar? Ketik manual"}
+            </button>
+
+            {showManualInput && (
+              <Input
+                data-testid="input-manual-band"
+                placeholder="Tulis nama band kamu..."
+                value={manualBand}
+                onChange={(e) => {
+                  setManualBand(e.target.value);
+                  setSelectedBand(e.target.value);
+                }}
+                className="rounded-xl"
+                autoFocus
+              />
+            )}
+          </div>
+
+          <Button
+            className="w-full bg-teal-600 hover:bg-teal-700 text-white"
+            disabled={!selectedBand.trim()}
+            onClick={() => setStep("menu")}
+            data-testid="button-lanjut-menu"
+          >
+            Lanjut ke Menu
+            <ChevronRight className="ml-1 h-4 w-4" />
+          </Button>
         </div>
       )}
 
