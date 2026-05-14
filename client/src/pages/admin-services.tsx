@@ -33,10 +33,12 @@ import {
   GripVertical,
   Clock,
   Banknote,
+  UtensilsCrossed,
+  X,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Service, PricingTier, AdditionalEquipment, OperationalSchedule } from "@shared/schema";
+import type { Service, PricingTier, AdditionalEquipment, OperationalSchedule, FoodMenuItem, MenuOptionGroup } from "@shared/schema";
 
 type ServiceForm = {
   key: string;
@@ -127,6 +129,21 @@ export default function AdminServices() {
   const [equipmentForm, setEquipmentForm] = useState<EquipmentForm>({ name: "", pricePerHour: "", serviceKeys: [], isActive: true, sortOrder: "0" });
   const [deleteEquipmentTarget, setDeleteEquipmentTarget] = useState<AdditionalEquipment | null>(null);
 
+  type FoodMenuForm = {
+    name: string;
+    price: string;
+    category: "minuman" | "makanan";
+    emoji: string;
+    isActive: boolean;
+    options: MenuOptionGroup[];
+    sortOrder: string;
+  };
+  const emptyFoodForm = (): FoodMenuForm => ({ name: "", price: "", category: "minuman", emoji: "🍽️", isActive: true, options: [], sortOrder: "0" });
+  const [foodMenuDialogOpen, setFoodMenuDialogOpen] = useState(false);
+  const [editingFoodItem, setEditingFoodItem] = useState<FoodMenuItem | null>(null);
+  const [foodForm, setFoodForm] = useState<FoodMenuForm>(emptyFoodForm());
+  const [deleteFoodTarget, setDeleteFoodTarget] = useState<FoodMenuItem | null>(null);
+
   const [minimalDPInput, setMinimalDPInput] = useState<string>("");
 
   const { data: services = [], isLoading } = useQuery<Service[]>({
@@ -176,6 +193,67 @@ export default function AdminServices() {
 
   const { data: equipment = [], isLoading: loadingEquipment } = useQuery<AdditionalEquipment[]>({
     queryKey: ["/api/admin/equipment"],
+  });
+
+  const { data: foodMenuItems = [], isLoading: loadingFoodMenu } = useQuery<FoodMenuItem[]>({
+    queryKey: ["/api/admin/food-menu"],
+  });
+
+  const createFoodMenuMutation = useMutation({
+    mutationFn: async (payload: any) => {
+      const res = await apiRequest("POST", "/api/admin/food-menu", payload);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/food-menu"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/food-menu"] });
+      setFoodMenuDialogOpen(false);
+      setEditingFoodItem(null);
+      setFoodForm(emptyFoodForm());
+      toast({ title: "Menu berhasil ditambahkan" });
+    },
+    onError: () => toast({ title: "Gagal menambahkan menu", variant: "destructive" }),
+  });
+
+  const updateFoodMenuMutation = useMutation({
+    mutationFn: async ({ id, payload }: { id: string; payload: any }) => {
+      const res = await apiRequest("PATCH", `/api/admin/food-menu/${id}`, payload);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/food-menu"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/food-menu"] });
+      setFoodMenuDialogOpen(false);
+      setEditingFoodItem(null);
+      setFoodForm(emptyFoodForm());
+      toast({ title: "Menu berhasil diperbarui" });
+    },
+    onError: () => toast({ title: "Gagal memperbarui menu", variant: "destructive" }),
+  });
+
+  const toggleFoodMenuMutation = useMutation({
+    mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
+      const res = await apiRequest("PATCH", `/api/admin/food-menu/${id}`, { isActive });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/food-menu"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/food-menu"] });
+    },
+    onError: () => toast({ title: "Gagal mengubah status menu", variant: "destructive" }),
+  });
+
+  const deleteFoodMenuMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/admin/food-menu/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/food-menu"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/food-menu"] });
+      setDeleteFoodTarget(null);
+      toast({ title: "Menu berhasil dihapus" });
+    },
+    onError: () => toast({ title: "Gagal menghapus menu", variant: "destructive" }),
   });
 
   const createMutation = useMutation({
@@ -733,6 +811,103 @@ export default function AdminServices() {
         </Card>
       </div>
 
+      {/* ── Menu Makanan & Minuman ── */}
+      <div className="border-t pt-6 mt-8">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <div className="flex items-center gap-2">
+            <UtensilsCrossed className="h-5 w-5 text-muted-foreground" />
+            <div>
+              <h2 className="text-lg font-bold">Menu Makanan & Minuman</h2>
+              <p className="text-sm text-muted-foreground">Kelola item menu yang tersedia untuk order makanan</p>
+            </div>
+          </div>
+          <Button
+            onClick={() => {
+              setEditingFoodItem(null);
+              setFoodForm(emptyFoodForm());
+              setFoodMenuDialogOpen(true);
+            }}
+            data-testid="button-add-food-menu"
+            className="shrink-0"
+          >
+            <Plus className="mr-1 h-4 w-4" />
+            Tambah Menu
+          </Button>
+        </div>
+
+        {loadingFoodMenu ? (
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 rounded-lg" />)}
+          </div>
+        ) : foodMenuItems.length === 0 ? (
+          <Card className="p-8 text-center">
+            <UtensilsCrossed className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
+            <p className="text-sm text-muted-foreground">Belum ada menu. Klik "Tambah Menu" untuk mulai.</p>
+          </Card>
+        ) : (
+          <div className="space-y-3">
+            {foodMenuItems.map((item) => {
+              const options = (item.options as MenuOptionGroup[]) || [];
+              return (
+                <Card key={item.id} className={`overflow-hidden transition-all ${!item.isActive ? "opacity-60" : ""}`} data-testid={`card-food-menu-${item.id}`}>
+                  <div className="flex items-center gap-2 p-3 sm:gap-3 sm:p-4">
+                    <span className="text-2xl shrink-0">{item.emoji}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-sm">{item.name}</span>
+                        <Badge variant="secondary" className="text-[10px]">{item.category}</Badge>
+                        {!item.isActive && <Badge variant="secondary" className="text-[10px]">Disembunyikan</Badge>}
+                      </div>
+                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                        <p className="text-xs text-muted-foreground">Rp {item.price.toLocaleString("id-ID")}</p>
+                        {options.length > 0 && (
+                          <p className="text-xs text-muted-foreground">
+                            · {options.map((o) => o.label).join(", ")}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                      <Switch
+                        checked={item.isActive}
+                        onCheckedChange={(checked) => toggleFoodMenuMutation.mutate({ id: item.id, isActive: checked })}
+                        data-testid={`switch-food-menu-${item.id}`}
+                      />
+                      <Button
+                        size="icon" variant="ghost" className="h-8 w-8"
+                        onClick={() => {
+                          setEditingFoodItem(item);
+                          setFoodForm({
+                            name: item.name,
+                            price: String(item.price),
+                            category: item.category as "minuman" | "makanan",
+                            emoji: item.emoji,
+                            isActive: item.isActive,
+                            options: (item.options as MenuOptionGroup[]) || [],
+                            sortOrder: String(item.sortOrder),
+                          });
+                          setFoodMenuDialogOpen(true);
+                        }}
+                        data-testid={`button-edit-food-menu-${item.id}`}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        size="icon" variant="ghost" className="h-8 w-8 text-destructive"
+                        onClick={() => setDeleteFoodTarget(item)}
+                        data-testid={`button-delete-food-menu-${item.id}`}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
       <Dialog open={dialogOpen} onOpenChange={(open) => !open && closeDialog()}>
         <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -1010,6 +1185,255 @@ export default function AdminServices() {
               data-testid="button-confirm-delete-equipment"
             >
               {deleteEquipmentMutation.isPending && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
+              Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* ── Food Menu Add/Edit Dialog ── */}
+      <Dialog
+        open={foodMenuDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setFoodMenuDialogOpen(false);
+            setEditingFoodItem(null);
+            setFoodForm(emptyFoodForm());
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingFoodItem ? "Edit Menu" : "Tambah Menu"}</DialogTitle>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const priceNum = parseInt(foodForm.price);
+              if (!foodForm.name.trim()) return toast({ title: "Nama menu wajib diisi", variant: "destructive" });
+              if (isNaN(priceNum) || priceNum < 0) return toast({ title: "Harga tidak valid", variant: "destructive" });
+              const payload = {
+                name: foodForm.name.trim(),
+                price: priceNum,
+                category: foodForm.category,
+                emoji: foodForm.emoji || "🍽️",
+                isActive: foodForm.isActive,
+                options: foodForm.options,
+                sortOrder: parseInt(foodForm.sortOrder) || 0,
+              };
+              if (editingFoodItem) {
+                updateFoodMenuMutation.mutate({ id: editingFoodItem.id, payload });
+              } else {
+                createFoodMenuMutation.mutate(payload);
+              }
+            }}
+            className="space-y-4"
+          >
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5 col-span-2 sm:col-span-1">
+                <label className="text-sm font-medium">Nama Menu *</label>
+                <Input
+                  placeholder="Air Mineral"
+                  value={foodForm.name}
+                  onChange={(e) => setFoodForm((f) => ({ ...f, name: e.target.value }))}
+                  data-testid="input-food-name"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Emoji</label>
+                <Input
+                  placeholder="💧"
+                  value={foodForm.emoji}
+                  onChange={(e) => setFoodForm((f) => ({ ...f, emoji: e.target.value }))}
+                  data-testid="input-food-emoji"
+                  className="text-center text-lg"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Harga (Rp) *</label>
+                <Input
+                  type="number"
+                  min={0}
+                  step={500}
+                  placeholder="5000"
+                  value={foodForm.price}
+                  onChange={(e) => setFoodForm((f) => ({ ...f, price: e.target.value }))}
+                  data-testid="input-food-price"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Kategori</label>
+                <select
+                  value={foodForm.category}
+                  onChange={(e) => setFoodForm((f) => ({ ...f, category: e.target.value as "minuman" | "makanan" }))}
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                  data-testid="select-food-category"
+                >
+                  <option value="minuman">Minuman</option>
+                  <option value="makanan">Makanan</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Options Builder */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">Pilihan / Varian</label>
+                <div className="flex gap-1">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs px-2"
+                    onClick={() => setFoodForm((f) => ({
+                      ...f,
+                      options: [...f.options, { key: `opt${Date.now()}`, label: "", type: "select", choices: [""] }]
+                    }))}
+                    data-testid="button-add-option-group-select"
+                  >
+                    + Pilihan
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs px-2"
+                    onClick={() => setFoodForm((f) => ({
+                      ...f,
+                      options: [...f.options, { key: `tog${Date.now()}`, label: "", type: "toggle", priceAdd: 0 }]
+                    }))}
+                    data-testid="button-add-option-group-toggle"
+                  >
+                    + Tambahan
+                  </Button>
+                </div>
+              </div>
+              {foodForm.options.map((og, ogi) => (
+                <div key={og.key} className="border rounded-lg p-3 space-y-2 text-sm bg-muted/30">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      placeholder={og.type === "select" ? "Label (cth: Suhu)" : "Label (cth: +Telur)"}
+                      value={og.label}
+                      onChange={(e) => setFoodForm((f) => {
+                        const opts = [...f.options];
+                        opts[ogi] = { ...opts[ogi], label: e.target.value };
+                        return { ...f, options: opts };
+                      })}
+                      className="flex-1 h-8 text-xs"
+                    />
+                    {og.type === "toggle" && (
+                      <Input
+                        type="number"
+                        min={0}
+                        step={500}
+                        placeholder="Harga tambah"
+                        value={og.priceAdd ?? ""}
+                        onChange={(e) => setFoodForm((f) => {
+                          const opts = [...f.options];
+                          opts[ogi] = { ...opts[ogi], priceAdd: parseInt(e.target.value) || 0 };
+                          return { ...f, options: opts };
+                        })}
+                        className="w-28 h-8 text-xs"
+                      />
+                    )}
+                    <Button
+                      type="button" size="icon" variant="ghost" className="h-7 w-7 shrink-0 text-destructive"
+                      onClick={() => setFoodForm((f) => ({ ...f, options: f.options.filter((_, i) => i !== ogi) }))}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                  {og.type === "select" && (
+                    <div className="space-y-1.5 pl-1">
+                      {(og.choices ?? []).map((ch, chi) => (
+                        <div key={chi} className="flex gap-1.5">
+                          <Input
+                            placeholder={`Pilihan ${chi + 1}`}
+                            value={ch}
+                            onChange={(e) => setFoodForm((f) => {
+                              const opts = [...f.options];
+                              const choices = [...(opts[ogi].choices ?? [])];
+                              choices[chi] = e.target.value;
+                              opts[ogi] = { ...opts[ogi], choices };
+                              return { ...f, options: opts };
+                            })}
+                            className="flex-1 h-7 text-xs"
+                          />
+                          <Button
+                            type="button" size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground"
+                            onClick={() => setFoodForm((f) => {
+                              const opts = [...f.options];
+                              const choices = (opts[ogi].choices ?? []).filter((_, i) => i !== chi);
+                              opts[ogi] = { ...opts[ogi], choices };
+                              return { ...f, options: opts };
+                            })}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                      <Button
+                        type="button" size="sm" variant="ghost" className="h-6 text-xs px-2 text-muted-foreground"
+                        onClick={() => setFoodForm((f) => {
+                          const opts = [...f.options];
+                          opts[ogi] = { ...opts[ogi], choices: [...(opts[ogi].choices ?? []), ""] };
+                          return { ...f, options: opts };
+                        })}
+                      >
+                        + Tambah pilihan
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="flex items-center justify-between rounded-lg border px-3 py-2">
+              <span className="text-sm">Status</span>
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={foodForm.isActive}
+                  onCheckedChange={(checked) => setFoodForm((f) => ({ ...f, isActive: checked }))}
+                  data-testid="switch-food-active"
+                />
+                <span className="text-sm">{foodForm.isActive ? "Aktif" : "Disembunyikan"}</span>
+              </div>
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={createFoodMenuMutation.isPending || updateFoodMenuMutation.isPending}
+              data-testid="button-save-food-menu"
+            >
+              {(createFoodMenuMutation.isPending || updateFoodMenuMutation.isPending) && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
+              {editingFoodItem ? "Simpan Perubahan" : "Tambah Menu"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Food Menu Delete Confirm ── */}
+      <AlertDialog open={!!deleteFoodTarget} onOpenChange={(open) => !open && setDeleteFoodTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Menu</AlertDialogTitle>
+            <AlertDialogDescription>
+              Hapus "{deleteFoodTarget?.name}" dari menu? Tindakan ini tidak dapat dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete-food">Batalkan</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground"
+              onClick={() => deleteFoodTarget && deleteFoodMenuMutation.mutate(deleteFoodTarget.id)}
+              disabled={deleteFoodMenuMutation.isPending}
+              data-testid="button-confirm-delete-food"
+            >
+              {deleteFoodMenuMutation.isPending && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
               Hapus
             </AlertDialogAction>
           </AlertDialogFooter>
