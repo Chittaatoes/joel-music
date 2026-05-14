@@ -21,35 +21,23 @@ import {
   CreditCard,
   X,
   Pencil,
+  Copy,
 } from "lucide-react";
+import type { FoodMenuItem, MenuOptionGroup } from "@shared/schema";
 
 const logoImage = "/images/logo.png";
+const qrisImage = "/images/qris.png";
 const ADMIN_WA = "628991601137";
+const FOOD_ORDER_LS_KEY = "jms_food_order_history";
 
-type MenuItem = {
-  id: string;
-  name: string;
-  price: number;
-  category: "minuman" | "makanan";
-  emoji: string;
+type CartEntry = {
+  cartKey: string;
+  item: FoodMenuItem;
+  qty: number;
+  selectedOptions: Record<string, string>;
+  effectivePrice: number;
 };
 
-const MENU: MenuItem[] = [
-  { id: "air-mineral", name: "Air Mineral", price: 5000, category: "minuman", emoji: "💧" },
-  { id: "es-teh-manis", name: "Es Teh Manis", price: 5000, category: "minuman", emoji: "🧋" },
-  { id: "teh-hangat", name: "Teh Hangat", price: 5000, category: "minuman", emoji: "☕" },
-  { id: "es-jeruk", name: "Es Jeruk", price: 7000, category: "minuman", emoji: "🍊" },
-  { id: "kopi-hitam", name: "Kopi Hitam", price: 7000, category: "minuman", emoji: "☕" },
-  { id: "kopi-susu", name: "Kopi Susu", price: 10000, category: "minuman", emoji: "🥛" },
-  { id: "es-coklat", name: "Es Coklat", price: 10000, category: "minuman", emoji: "🍫" },
-  { id: "es-capucino", name: "Es Capucino", price: 12000, category: "minuman", emoji: "☕" },
-  { id: "mie-instan", name: "Mie Instan", price: 10000, category: "makanan", emoji: "🍜" },
-  { id: "roti-bakar", name: "Roti Bakar", price: 15000, category: "makanan", emoji: "🍞" },
-  { id: "gorengan", name: "Gorengan (3 pcs)", price: 6000, category: "makanan", emoji: "🥘" },
-  { id: "keripik", name: "Keripik Singkong", price: 8000, category: "makanan", emoji: "🥔" },
-];
-
-type CartItem = { item: MenuItem; qty: number };
 type Step = "band" | "menu" | "checkout" | "done";
 type ServingTime = "sekarang" | "akhir_sesi";
 type PaymentMethod = "cash" | "qris";
@@ -65,6 +53,63 @@ function formatPrice(p: number) {
   return `Rp ${p.toLocaleString("id-ID")}`;
 }
 
+function makeCartKey(itemId: string, opts: Record<string, string>) {
+  const sorted = Object.keys(opts).sort().map((k) => `${k}=${opts[k]}`).join("&");
+  return sorted ? `${itemId}::${sorted}` : itemId;
+}
+
+function calcEffectivePrice(item: FoodMenuItem, opts: Record<string, string>): number {
+  const options = (item.options as MenuOptionGroup[]) || [];
+  let extra = 0;
+  for (const opt of options) {
+    if (opt.type === "toggle" && opts[opt.key] === "true" && opt.priceAdd) {
+      extra += opt.priceAdd;
+    }
+  }
+  return item.price + extra;
+}
+
+function optionLabel(opts: Record<string, string>, options: MenuOptionGroup[]): string {
+  const parts: string[] = [];
+  for (const opt of options) {
+    const val = opts[opt.key];
+    if (!val || val === "false") continue;
+    if (opt.type === "select") parts.push(val);
+    if (opt.type === "toggle" && val === "true") parts.push(opt.label);
+  }
+  return parts.join(", ");
+}
+
+function defaultOptions(options: MenuOptionGroup[]): Record<string, string> {
+  const result: Record<string, string> = {};
+  for (const opt of options) {
+    if (opt.type === "select" && opt.choices && opt.choices.length > 0) {
+      result[opt.key] = opt.choices[0];
+    } else if (opt.type === "toggle") {
+      result[opt.key] = "false";
+    }
+  }
+  return result;
+}
+
+function saveFoodOrderToHistory(order: {
+  id: string;
+  namaBand: string;
+  items: { id: string; name: string; price: number; qty: number; emoji: string; selectedOptions?: Record<string, string> }[];
+  total: number;
+  servingTime: string;
+  paymentMethod: string;
+  status: string;
+  createdAt: string;
+}) {
+  try {
+    const raw = localStorage.getItem(FOOD_ORDER_LS_KEY);
+    const history = raw ? JSON.parse(raw) : [];
+    history.unshift(order);
+    localStorage.setItem(FOOD_ORDER_LS_KEY, JSON.stringify(history));
+  } catch {}
+}
+
 export default function FoodOrderPage() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
@@ -73,51 +118,98 @@ export default function FoodOrderPage() {
   const [selectedBand, setSelectedBand] = useState<string>("");
   const [manualBand, setManualBand] = useState<string>("");
   const [showManualInput, setShowManualInput] = useState(false);
-  const [cart, setCart] = useState<Map<string, number>>(new Map());
+  const [cart, setCart] = useState<Map<string, CartEntry>>(new Map());
   const [servingTime, setServingTime] = useState<ServingTime>("sekarang");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
   const [showCart, setShowCart] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const [optionDialogItem, setOptionDialogItem] = useState<FoodMenuItem | null>(null);
+  const [optionSelections, setOptionSelections] = useState<Record<string, string>>({});
 
   const { data: todayBookings = [], isLoading } = useQuery<TodayBooking[]>({
-    queryKey: ["/api/bookings/today-confirmed"],
+    queryKey: ["/bookings/today-bands"],
     queryFn: async () => {
-      const res = await fetch("/api/bookings/today-confirmed");
+      const res = await fetch("/bookings/today-bands");
       if (!res.ok) throw new Error("Gagal memuat data");
       return res.json();
     },
   });
 
-  const addToCart = useCallback((id: string) => {
+  const { data: menuItems = [], isLoading: isMenuLoading } = useQuery<FoodMenuItem[]>({
+    queryKey: ["/api/food-menu"],
+    queryFn: async () => {
+      const res = await fetch("/api/food-menu");
+      if (!res.ok) throw new Error("Gagal memuat menu");
+      return res.json();
+    },
+  });
+
+  const cartEntries = Array.from(cart.values());
+  const totalQty = cartEntries.reduce((s, e) => s + e.qty, 0);
+  const totalPrice = cartEntries.reduce((s, e) => s + e.effectivePrice * e.qty, 0);
+
+  const addCartEntry = useCallback((entry: CartEntry) => {
     setCart((prev) => {
       const next = new Map(prev);
-      next.set(id, (next.get(id) ?? 0) + 1);
+      const existing = next.get(entry.cartKey);
+      if (existing) {
+        next.set(entry.cartKey, { ...existing, qty: existing.qty + 1 });
+      } else {
+        next.set(entry.cartKey, { ...entry, qty: 1 });
+      }
       return next;
     });
   }, []);
 
-  const removeFromCart = useCallback((id: string) => {
+  const removeCartEntry = useCallback((cartKey: string) => {
     setCart((prev) => {
       const next = new Map(prev);
-      const cur = next.get(id) ?? 0;
-      if (cur <= 1) next.delete(id);
-      else next.set(id, cur - 1);
+      const existing = next.get(cartKey);
+      if (!existing) return prev;
+      if (existing.qty <= 1) {
+        next.delete(cartKey);
+      } else {
+        next.set(cartKey, { ...existing, qty: existing.qty - 1 });
+      }
       return next;
     });
   }, []);
 
-  const cartItems: CartItem[] = MENU.filter((m) => (cart.get(m.id) ?? 0) > 0).map((m) => ({
-    item: m,
-    qty: cart.get(m.id)!,
-  }));
+  const handleAddItem = useCallback((item: FoodMenuItem) => {
+    const options = (item.options as MenuOptionGroup[]) || [];
+    if (options.length === 0) {
+      addCartEntry({
+        cartKey: item.id,
+        item,
+        qty: 1,
+        selectedOptions: {},
+        effectivePrice: item.price,
+      });
+      return;
+    }
+    setOptionSelections(defaultOptions(options));
+    setOptionDialogItem(item);
+  }, [addCartEntry]);
 
-  const totalQty = cartItems.reduce((s, c) => s + c.qty, 0);
-  const totalPrice = cartItems.reduce((s, c) => s + c.item.price * c.qty, 0);
+  const handleOptionConfirm = () => {
+    if (!optionDialogItem) return;
+    const effectivePrice = calcEffectivePrice(optionDialogItem, optionSelections);
+    const cartKey = makeCartKey(optionDialogItem.id, optionSelections);
+    addCartEntry({ cartKey, item: optionDialogItem, qty: 1, selectedOptions: { ...optionSelections }, effectivePrice });
+    setOptionDialogItem(null);
+  };
 
   const buildWaMessage = () => {
     const lines = [
       `👤 *${selectedBand}*`,
       `🛒 *Order:*`,
-      ...cartItems.map((c) => `• ${c.item.emoji} ${c.item.name} x${c.qty} – ${formatPrice(c.item.price * c.qty)}`),
+      ...cartEntries.map((e) => {
+        const opts = optionLabel(e.selectedOptions, (e.item.options as MenuOptionGroup[]) || []);
+        const label = opts ? `${e.item.name} (${opts})` : e.item.name;
+        return `• ${e.item.emoji} ${label} x${e.qty} – ${formatPrice(e.effectivePrice * e.qty)}`;
+      }),
       ``,
       `💰 *Total: ${formatPrice(totalPrice)}*`,
       `💳 *Pembayaran:* ${paymentMethod === "cash" ? "Cash" : "QRIS"}`,
@@ -126,15 +218,68 @@ export default function FoodOrderPage() {
     return lines.join("\n");
   };
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
+    setIsSubmitting(true);
+    const itemsPayload = cartEntries.map((e) => ({
+      id: e.item.id,
+      name: e.item.name,
+      price: e.effectivePrice,
+      qty: e.qty,
+      emoji: e.item.emoji,
+      selectedOptions: Object.keys(e.selectedOptions).length > 0 ? e.selectedOptions : undefined,
+    }));
+
+    try {
+      const res = await fetch("/api/food-orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          namaBand: selectedBand,
+          items: itemsPayload,
+          total: totalPrice,
+          servingTime,
+          paymentMethod,
+        }),
+      });
+      if (res.ok) {
+        const order = await res.json();
+        saveFoodOrderToHistory({
+          id: order.id,
+          namaBand: selectedBand,
+          items: itemsPayload,
+          total: totalPrice,
+          servingTime,
+          paymentMethod,
+          status: "pending",
+          createdAt: order.createdAt || new Date().toISOString(),
+        });
+      }
+    } catch {}
+
     const msg = buildWaMessage();
-    const encoded = encodeURIComponent(msg);
-    window.open(`https://wa.me/${ADMIN_WA}?text=${encoded}`, "_blank");
+    window.open(`https://wa.me/${ADMIN_WA}?text=${encodeURIComponent(msg)}`, "_blank");
+    setIsSubmitting(false);
     setStep("done");
   };
 
-  const minuman = MENU.filter((m) => m.category === "minuman");
-  const makanan = MENU.filter((m) => m.category === "makanan");
+  const handleCopyNorek = () => {
+    navigator.clipboard.writeText("8823018639").then(() => {
+      setCopied(true);
+      toast({ title: "Nomor rekening disalin" });
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  const minuman = menuItems.filter((m) => m.category === "minuman");
+  const makanan = menuItems.filter((m) => m.category === "makanan");
+
+  function getCartQtyForItem(itemId: string): number {
+    let total = 0;
+    for (const e of cart.values()) {
+      if (e.item.id === itemId) total += e.qty;
+    }
+    return total;
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col pb-24">
@@ -149,10 +294,7 @@ export default function FoodOrderPage() {
             <span className="font-semibold text-sm">Order Makanan & Minuman</span>
           </div>
           {step === "menu" && (
-            <button
-              className="relative"
-              onClick={() => setShowCart(true)}
-            >
+            <button className="relative" onClick={() => setShowCart(true)}>
               <ShoppingCart className="h-5 w-5 text-muted-foreground" />
               {totalQty > 0 && (
                 <span className="absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full bg-teal-500 text-white text-[9px] font-bold flex items-center justify-center">
@@ -191,17 +333,13 @@ export default function FoodOrderPage() {
 
           {isLoading && (
             <div className="flex flex-wrap gap-2">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-9 w-28 rounded-full bg-muted animate-pulse" />
-              ))}
+              {[1, 2, 3].map((i) => <div key={i} className="h-9 w-28 rounded-full bg-muted animate-pulse" />)}
             </div>
           )}
 
           {!isLoading && todayBookings.length > 0 && (
             <div className="space-y-3">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                Booking hari ini
-              </p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Booking hari ini</p>
               <div className="flex flex-wrap gap-2">
                 {todayBookings.map((b, i) => {
                   const jamEnd = b.jamMulai + b.durasi;
@@ -210,11 +348,7 @@ export default function FoodOrderPage() {
                     <button
                       key={i}
                       data-testid={`suggestion-band-${i}`}
-                      onClick={() => {
-                        setSelectedBand(b.namaBand);
-                        setManualBand("");
-                        setShowManualInput(false);
-                      }}
+                      onClick={() => { setSelectedBand(b.namaBand); setManualBand(""); setShowManualInput(false); }}
                       className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-all duration-150 ${
                         isSelected
                           ? "border-teal-500 bg-teal-500 text-white"
@@ -235,19 +369,14 @@ export default function FoodOrderPage() {
 
           {!isLoading && todayBookings.length === 0 && (
             <Card className="p-4 border-dashed">
-              <p className="text-xs text-muted-foreground text-center">
-                Belum ada booking hari ini yang terdaftar.
-              </p>
+              <p className="text-xs text-muted-foreground text-center">Belum ada booking hari ini yang terdaftar.</p>
             </Card>
           )}
 
           <div className="space-y-2">
             <button
               data-testid="toggle-manual-input"
-              onClick={() => {
-                setShowManualInput((v) => !v);
-                if (!showManualInput) setSelectedBand("");
-              }}
+              onClick={() => { setShowManualInput((v) => !v); if (!showManualInput) setSelectedBand(""); }}
               className="flex items-center gap-1.5 text-xs text-teal-600 dark:text-teal-400 font-medium"
             >
               <Pencil className="h-3.5 w-3.5" />
@@ -259,10 +388,7 @@ export default function FoodOrderPage() {
                 data-testid="input-manual-band"
                 placeholder="Tulis nama band kamu..."
                 value={manualBand}
-                onChange={(e) => {
-                  setManualBand(e.target.value);
-                  setSelectedBand(e.target.value);
-                }}
+                onChange={(e) => { setManualBand(e.target.value); setSelectedBand(e.target.value); }}
                 className="rounded-xl"
                 autoFocus
               />
@@ -291,105 +417,104 @@ export default function FoodOrderPage() {
             </Badge>
           </div>
 
-          {/* Minuman */}
-          <section>
-            <div className="flex items-center gap-2 mb-2">
-              <Coffee className="h-4 w-4 text-teal-600" />
-              <h3 className="font-semibold text-sm">Minuman</h3>
-            </div>
+          {isMenuLoading && (
             <div className="space-y-2">
-              {minuman.map((item) => {
-                const qty = cart.get(item.id) ?? 0;
-                return (
-                  <Card key={item.id} className="flex items-center justify-between p-3 gap-3">
-                    <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                      <span className="text-xl">{item.emoji}</span>
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium leading-tight">{item.name}</p>
-                        <p className="text-xs text-muted-foreground">{formatPrice(item.price)}</p>
+              {[1, 2, 3].map((i) => <div key={i} className="h-16 rounded-xl bg-muted animate-pulse" />)}
+            </div>
+          )}
+
+          {/* Minuman */}
+          {minuman.length > 0 && (
+            <section>
+              <div className="flex items-center gap-2 mb-2">
+                <Coffee className="h-4 w-4 text-teal-600" />
+                <h3 className="font-semibold text-sm">Minuman</h3>
+              </div>
+              <div className="space-y-2">
+                {minuman.map((item) => {
+                  const totalQtyForItem = getCartQtyForItem(item.id);
+                  const options = (item.options as MenuOptionGroup[]) || [];
+                  const hasOptions = options.length > 0;
+                  return (
+                    <Card key={item.id} className="flex items-center justify-between p-3 gap-3">
+                      <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                        <span className="text-xl">{item.emoji}</span>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium leading-tight">{item.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatPrice(item.price)}
+                            {hasOptions && <span className="ml-1 text-teal-600 dark:text-teal-400">· ada pilihan</span>}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      {qty > 0 ? (
-                        <>
-                          <button
-                            className="h-7 w-7 rounded-full border flex items-center justify-center hover:bg-muted transition-colors"
-                            onClick={() => removeFromCart(item.id)}
-                          >
-                            <Minus className="h-3 w-3" />
-                          </button>
-                          <span className="w-5 text-center text-sm font-semibold">{qty}</span>
-                          <button
-                            className="h-7 w-7 rounded-full bg-teal-600 text-white flex items-center justify-center hover:bg-teal-700 transition-colors"
-                            onClick={() => addToCart(item.id)}
-                          >
-                            <Plus className="h-3 w-3" />
-                          </button>
-                        </>
-                      ) : (
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {totalQtyForItem > 0 && (
+                          <span className="text-xs font-semibold text-teal-600 w-4 text-center">{totalQtyForItem}</span>
+                        )}
                         <button
                           className="h-7 w-7 rounded-full bg-teal-600 text-white flex items-center justify-center hover:bg-teal-700 transition-colors"
-                          onClick={() => addToCart(item.id)}
+                          onClick={() => handleAddItem(item)}
+                          data-testid={`button-add-${item.id}`}
                         >
                           <Plus className="h-3 w-3" />
                         </button>
-                      )}
-                    </div>
-                  </Card>
-                );
-              })}
-            </div>
-          </section>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            </section>
+          )}
 
           {/* Makanan */}
-          <section>
-            <div className="flex items-center gap-2 mb-2">
-              <UtensilsCrossed className="h-4 w-4 text-teal-600" />
-              <h3 className="font-semibold text-sm">Makanan</h3>
-            </div>
-            <div className="space-y-2">
-              {makanan.map((item) => {
-                const qty = cart.get(item.id) ?? 0;
-                return (
-                  <Card key={item.id} className="flex items-center justify-between p-3 gap-3">
-                    <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                      <span className="text-xl">{item.emoji}</span>
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium leading-tight">{item.name}</p>
-                        <p className="text-xs text-muted-foreground">{formatPrice(item.price)}</p>
+          {makanan.length > 0 && (
+            <section>
+              <div className="flex items-center gap-2 mb-2">
+                <UtensilsCrossed className="h-4 w-4 text-teal-600" />
+                <h3 className="font-semibold text-sm">Makanan</h3>
+              </div>
+              <div className="space-y-2">
+                {makanan.map((item) => {
+                  const totalQtyForItem = getCartQtyForItem(item.id);
+                  const options = (item.options as MenuOptionGroup[]) || [];
+                  const hasOptions = options.length > 0;
+                  return (
+                    <Card key={item.id} className="flex items-center justify-between p-3 gap-3">
+                      <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                        <span className="text-xl">{item.emoji}</span>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium leading-tight">{item.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatPrice(item.price)}
+                            {hasOptions && <span className="ml-1 text-teal-600 dark:text-teal-400">· ada pilihan</span>}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      {qty > 0 ? (
-                        <>
-                          <button
-                            className="h-7 w-7 rounded-full border flex items-center justify-center hover:bg-muted transition-colors"
-                            onClick={() => removeFromCart(item.id)}
-                          >
-                            <Minus className="h-3 w-3" />
-                          </button>
-                          <span className="w-5 text-center text-sm font-semibold">{qty}</span>
-                          <button
-                            className="h-7 w-7 rounded-full bg-teal-600 text-white flex items-center justify-center hover:bg-teal-700 transition-colors"
-                            onClick={() => addToCart(item.id)}
-                          >
-                            <Plus className="h-3 w-3" />
-                          </button>
-                        </>
-                      ) : (
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {totalQtyForItem > 0 && (
+                          <span className="text-xs font-semibold text-teal-600 w-4 text-center">{totalQtyForItem}</span>
+                        )}
                         <button
                           className="h-7 w-7 rounded-full bg-teal-600 text-white flex items-center justify-center hover:bg-teal-700 transition-colors"
-                          onClick={() => addToCart(item.id)}
+                          onClick={() => handleAddItem(item)}
+                          data-testid={`button-add-${item.id}`}
                         >
                           <Plus className="h-3 w-3" />
                         </button>
-                      )}
-                    </div>
-                  </Card>
-                );
-              })}
-            </div>
-          </section>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          {!isMenuLoading && menuItems.length === 0 && (
+            <Card className="p-8 text-center border-dashed">
+              <UtensilsCrossed className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
+              <p className="text-sm text-muted-foreground">Menu belum tersedia</p>
+            </Card>
+          )}
         </div>
       )}
 
@@ -401,12 +526,19 @@ export default function FoodOrderPage() {
           {/* Order summary */}
           <Card className="p-4 space-y-2">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Ringkasan Order</p>
-            {cartItems.map((c) => (
-              <div key={c.item.id} className="flex items-center justify-between text-sm">
-                <span>{c.item.emoji} {c.item.name} <span className="text-muted-foreground">x{c.qty}</span></span>
-                <span className="font-medium">{formatPrice(c.item.price * c.qty)}</span>
-              </div>
-            ))}
+            {cartEntries.map((e) => {
+              const opts = optionLabel(e.selectedOptions, (e.item.options as MenuOptionGroup[]) || []);
+              return (
+                <div key={e.cartKey} className="flex items-start justify-between text-sm gap-2">
+                  <span className="flex-1">
+                    {e.item.emoji} {e.item.name}
+                    {opts && <span className="text-muted-foreground text-xs ml-1">({opts})</span>}
+                    <span className="text-muted-foreground ml-1">x{e.qty}</span>
+                  </span>
+                  <span className="font-medium shrink-0">{formatPrice(e.effectivePrice * e.qty)}</span>
+                </div>
+              );
+            })}
             <div className="border-t pt-2 flex items-center justify-between font-semibold">
               <span>Total</span>
               <span className="text-teal-600">{formatPrice(totalPrice)}</span>
@@ -465,12 +597,41 @@ export default function FoodOrderPage() {
             </div>
           </div>
 
+          {paymentMethod === "qris" && (
+            <Card className="p-4 space-y-4 border-teal-500/30 bg-teal-500/5">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Cara Pembayaran QRIS</p>
+              <div className="flex flex-col items-center gap-3">
+                <img src={qrisImage} alt="QRIS Joel Music Studio" className="w-52 h-52 object-contain rounded-xl border bg-white p-2" />
+                <p className="text-xs text-muted-foreground text-center">Scan kode QRIS di atas dengan aplikasi bank / e-wallet kamu</p>
+              </div>
+              <div className="border-t pt-3 space-y-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Atau Transfer Bank</p>
+                <div className="flex items-center justify-between rounded-lg bg-background border px-3 py-2.5">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Transfer Bank BCA</p>
+                    <p className="font-mono font-semibold text-base tracking-wider">8823018639</p>
+                    <p className="text-xs text-muted-foreground">a.n. Muhammad Fahreza Hafidz</p>
+                  </div>
+                  <button
+                    onClick={handleCopyNorek}
+                    className="flex items-center gap-1.5 text-xs text-teal-600 dark:text-teal-400 font-medium shrink-0 ml-3"
+                    data-testid="button-copy-norek-food"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                    {copied ? "Tersalin!" : "Salin"}
+                  </button>
+                </div>
+              </div>
+            </Card>
+          )}
+
           <Button
             className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
             onClick={handleCheckout}
+            disabled={isSubmitting}
+            data-testid="button-kirim-order"
           >
-            <span className="mr-1">✅</span>
-            Kirim Order via WhatsApp
+            {isSubmitting ? <span className="animate-pulse">Memproses...</span> : <><span className="mr-1">✅</span>Kirim Order via WhatsApp</>}
           </Button>
         </div>
       )}
@@ -483,16 +644,14 @@ export default function FoodOrderPage() {
           </div>
           <div>
             <h2 className="font-bold text-xl">Order Terkirim!</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Pesananmu sudah dikirim ke admin via WhatsApp. Tunggu konfirmasi ya!
-            </p>
+            <p className="text-sm text-muted-foreground mt-1">Pesananmu sudah dikirim ke admin via WhatsApp. Tunggu konfirmasi ya!</p>
           </div>
-          <Button variant="outline" onClick={() => { setStep("menu"); setCart(new Map()); }}>
-            Order Lagi
+          <Button variant="outline" onClick={() => { setStep("menu"); setCart(new Map()); }}>Order Lagi</Button>
+          <Button variant="outline" onClick={() => navigate("/history")}>
+            <Clock className="mr-2 h-4 w-4" />
+            Lihat Riwayat Pesanan
           </Button>
-          <Button className="bg-teal-600 hover:bg-teal-700 text-white" onClick={() => navigate("/")}>
-            Kembali ke Beranda
-          </Button>
+          <Button className="bg-teal-600 hover:bg-teal-700 text-white" onClick={() => navigate("/")}>Kembali ke Beranda</Button>
         </div>
       )}
 
@@ -510,55 +669,128 @@ export default function FoodOrderPage() {
         </div>
       )}
 
-      {/* ── Cart drawer / sheet ── */}
+      {/* ── Cart drawer ── */}
       {showCart && (
         <div className="fixed inset-0 z-[60] flex flex-col justify-end">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowCart(false)} />
           <div className="relative bg-background rounded-t-2xl shadow-xl p-4 space-y-3 max-h-[70vh] overflow-y-auto">
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-base">Keranjang</h3>
-              <button onClick={() => setShowCart(false)}>
-                <X className="h-5 w-5 text-muted-foreground" />
-              </button>
+              <button onClick={() => setShowCart(false)}><X className="h-5 w-5 text-muted-foreground" /></button>
             </div>
-            {cartItems.length === 0 && (
+            {cartEntries.length === 0 && (
               <p className="text-sm text-muted-foreground py-4 text-center">Keranjang kosong</p>
             )}
-            {cartItems.map((c) => (
-              <div key={c.item.id} className="flex items-center justify-between gap-3">
-                <span className="text-sm flex-1">{c.item.emoji} {c.item.name}</span>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <button
-                    className="h-6 w-6 rounded-full border flex items-center justify-center"
-                    onClick={() => removeFromCart(c.item.id)}
-                  >
-                    <Minus className="h-2.5 w-2.5" />
-                  </button>
-                  <span className="w-4 text-center text-sm font-semibold">{c.qty}</span>
-                  <button
-                    className="h-6 w-6 rounded-full bg-teal-600 text-white flex items-center justify-center"
-                    onClick={() => addToCart(c.item.id)}
-                  >
-                    <Plus className="h-2.5 w-2.5" />
-                  </button>
+            {cartEntries.map((e) => {
+              const opts = optionLabel(e.selectedOptions, (e.item.options as MenuOptionGroup[]) || []);
+              return (
+                <div key={e.cartKey} className="flex items-center justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <span className="text-sm">{e.item.emoji} {e.item.name}</span>
+                    {opts && <span className="text-xs text-muted-foreground ml-1">({opts})</span>}
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button className="h-6 w-6 rounded-full border flex items-center justify-center" onClick={() => removeCartEntry(e.cartKey)}>
+                      <Minus className="h-2.5 w-2.5" />
+                    </button>
+                    <span className="w-4 text-center text-sm font-semibold">{e.qty}</span>
+                    <button className="h-6 w-6 rounded-full bg-teal-600 text-white flex items-center justify-center" onClick={() => handleAddItem(e.item)}>
+                      <Plus className="h-2.5 w-2.5" />
+                    </button>
+                  </div>
+                  <span className="text-sm font-medium w-20 text-right">{formatPrice(e.effectivePrice * e.qty)}</span>
                 </div>
-                <span className="text-sm font-medium w-20 text-right">{formatPrice(c.item.price * c.qty)}</span>
-              </div>
-            ))}
-            {cartItems.length > 0 && (
+              );
+            })}
+            {cartEntries.length > 0 && (
               <>
-                <div className="border-t pt-2 flex items-center justify-between font-semibold text-sm">
-                  <span>Total</span>
-                  <span className="text-teal-600">{formatPrice(totalPrice)}</span>
+                <div className="border-t pt-2 flex items-center justify-between font-semibold">
+                  <span className="text-sm">Total</span>
+                  <span className="text-sm text-teal-600">{formatPrice(totalPrice)}</span>
                 </div>
-                <Button
-                  className="w-full bg-teal-600 hover:bg-teal-700 text-white"
-                  onClick={() => { setShowCart(false); setStep("checkout"); }}
-                >
-                  Checkout
+                <Button className="w-full bg-teal-600 hover:bg-teal-700 text-white" onClick={() => { setShowCart(false); setStep("checkout"); }}>
+                  Lanjut Checkout <ChevronRight className="h-4 w-4 ml-1" />
                 </Button>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Option picker dialog ── */}
+      {optionDialogItem && (
+        <div className="fixed inset-0 z-[70] flex flex-col justify-end">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setOptionDialogItem(null)} />
+          <div className="relative bg-background rounded-t-2xl shadow-2xl p-5 space-y-4 max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-base">{optionDialogItem.emoji} {optionDialogItem.name}</h3>
+                <p className="text-xs text-muted-foreground">Pilih opsi sebelum menambahkan ke keranjang</p>
+              </div>
+              <button onClick={() => setOptionDialogItem(null)}><X className="h-5 w-5 text-muted-foreground" /></button>
+            </div>
+
+            {((optionDialogItem.options as MenuOptionGroup[]) || []).map((opt) => (
+              <div key={opt.key} className="space-y-2">
+                <p className="text-sm font-semibold">{opt.label}</p>
+                {opt.type === "select" && opt.choices && (
+                  <div className="flex flex-wrap gap-2">
+                    {opt.choices.map((choice) => (
+                      <button
+                        key={choice}
+                        onClick={() => setOptionSelections((prev) => ({ ...prev, [opt.key]: choice }))}
+                        className={`px-4 py-2 rounded-xl border-2 text-sm font-medium transition-all ${
+                          optionSelections[opt.key] === choice
+                            ? "border-teal-500 bg-teal-50 dark:bg-teal-950/30 text-teal-700 dark:text-teal-300"
+                            : "border-border bg-card hover:border-teal-300"
+                        }`}
+                      >
+                        {choice}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {opt.type === "toggle" && (
+                  <button
+                    onClick={() => setOptionSelections((prev) => ({ ...prev, [opt.key]: prev[opt.key] === "true" ? "false" : "true" }))}
+                    className={`flex items-center gap-3 w-full rounded-xl border-2 p-3 text-sm font-medium transition-all text-left ${
+                      optionSelections[opt.key] === "true"
+                        ? "border-teal-500 bg-teal-50 dark:bg-teal-950/30"
+                        : "border-border bg-card hover:border-teal-300"
+                    }`}
+                  >
+                    <div className={`h-5 w-5 rounded border-2 flex items-center justify-center shrink-0 transition-all ${
+                      optionSelections[opt.key] === "true" ? "border-teal-500 bg-teal-500" : "border-muted-foreground"
+                    }`}>
+                      {optionSelections[opt.key] === "true" && <CheckCircle2 className="h-3 w-3 text-white" />}
+                    </div>
+                    <span>{opt.label}</span>
+                    {opt.priceAdd && (
+                      <span className="ml-auto text-xs text-teal-600 dark:text-teal-400 shrink-0">
+                        +{formatPrice(opt.priceAdd)}
+                      </span>
+                    )}
+                  </button>
+                )}
+              </div>
+            ))}
+
+            <div className="border-t pt-3 flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">Harga</p>
+                <p className="font-bold text-teal-600 text-lg">
+                  {formatPrice(calcEffectivePrice(optionDialogItem, optionSelections))}
+                </p>
+              </div>
+              <Button
+                className="bg-teal-600 hover:bg-teal-700 text-white"
+                onClick={handleOptionConfirm}
+                data-testid="button-confirm-option"
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Tambah ke Keranjang
+              </Button>
+            </div>
           </div>
         </div>
       )}
