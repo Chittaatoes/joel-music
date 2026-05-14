@@ -1204,6 +1204,146 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  app.post("/api/food-orders", async (req, res) => {
+    try {
+      const { namaBand, items, total, servingTime, paymentMethod } = req.body;
+      if (!namaBand || !items || !total) {
+        return res.status(400).json({ message: "Data pesanan tidak lengkap" });
+      }
+      const order = await storage.createFoodOrder({ namaBand, items, total, servingTime: servingTime || "sekarang", paymentMethod: paymentMethod || "cash" });
+      sendPushToAllAdmins({
+        title: "Ada pesanan makanan/minuman! 🍜",
+        body: `${namaBand} pesan ${items.length} item — total Rp ${total.toLocaleString("id-ID")}. Di cek yuu 😊`,
+        url: "/admin/payments",
+      });
+      res.json(order);
+    } catch (err) {
+      res.status(500).json({ message: "Gagal menyimpan pesanan" });
+    }
+  });
+
+  app.get("/api/admin/food-orders", async (req: any, res) => {
+    if (!requireAdmin(req, res)) return;
+    try {
+      const orders = await storage.getAllFoodOrders();
+      res.json(orders);
+    } catch (err) {
+      res.status(500).json({ message: "Gagal mengambil pesanan" });
+    }
+  });
+
+  app.patch("/api/admin/food-orders/:id/status", async (req: any, res) => {
+    if (!requireAdmin(req, res)) return;
+    try {
+      const { status } = req.body;
+      if (!["pending", "done"].includes(status)) {
+        return res.status(400).json({ message: "Status tidak valid" });
+      }
+      const order = await storage.updateFoodOrderStatus(req.params.id, status);
+      if (!order) return res.status(404).json({ message: "Pesanan tidak ditemukan" });
+      res.json(order);
+    } catch (err) {
+      res.status(500).json({ message: "Gagal update status pesanan" });
+    }
+  });
+
+  app.delete("/api/admin/food-orders/:id", async (req: any, res) => {
+    if (!requireAdmin(req, res)) return;
+    try {
+      const ok = await storage.deleteFoodOrder(req.params.id);
+      if (!ok) return res.status(404).json({ message: "Pesanan tidak ditemukan" });
+      res.json({ success: true });
+    } catch (err) {
+      res.status(500).json({ message: "Gagal hapus pesanan" });
+    }
+  });
+
+  app.get("/api/food-menu", async (_req, res) => {
+    try {
+      const items = await storage.getActiveFoodMenu();
+      res.json(items);
+    } catch {
+      res.status(500).json({ message: "Gagal memuat menu" });
+    }
+  });
+
+  app.get("/api/admin/food-menu", async (req: any, res) => {
+    if (!req.session?.adminId) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const items = await storage.getAllFoodMenu();
+      res.json(items);
+    } catch {
+      res.status(500).json({ message: "Gagal memuat menu" });
+    }
+  });
+
+  app.post("/api/admin/food-menu", async (req: any, res) => {
+    if (!req.session?.adminId) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const { name, price, category, emoji, isActive, options, sortOrder } = req.body;
+      if (!name || price == null) return res.status(400).json({ message: "name dan price wajib diisi" });
+      const item = await storage.createFoodMenuItem({
+        name,
+        price: Number(price),
+        category: category || "minuman",
+        emoji: emoji || "🍽️",
+        isActive: isActive !== false,
+        options: options || [],
+        sortOrder: Number(sortOrder) || 0,
+      });
+      res.json(item);
+    } catch {
+      res.status(500).json({ message: "Gagal menambahkan menu" });
+    }
+  });
+
+  app.patch("/api/admin/food-menu/:id", async (req: any, res) => {
+    if (!req.session?.adminId) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const { id } = req.params;
+      const { name, price, category, emoji, isActive, options, sortOrder } = req.body;
+      const updates: any = {};
+      if (name !== undefined) updates.name = name;
+      if (price !== undefined) updates.price = Number(price);
+      if (category !== undefined) updates.category = category;
+      if (emoji !== undefined) updates.emoji = emoji;
+      if (isActive !== undefined) updates.isActive = isActive;
+      if (options !== undefined) updates.options = options;
+      if (sortOrder !== undefined) updates.sortOrder = Number(sortOrder);
+      const item = await storage.updateFoodMenuItem(id, updates);
+      if (!item) return res.status(404).json({ message: "Menu tidak ditemukan" });
+      res.json(item);
+    } catch {
+      res.status(500).json({ message: "Gagal memperbarui menu" });
+    }
+  });
+
+  app.delete("/api/admin/food-menu/:id", async (req: any, res) => {
+    if (!req.session?.adminId) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      await storage.deleteFoodMenuItem(req.params.id);
+      res.json({ success: true });
+    } catch {
+      res.status(500).json({ message: "Gagal menghapus menu" });
+    }
+  });
+
+  app.get("/bookings/today-bands", async (_req, res) => {
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const allTodays = await storage.getBookingsByDate(today);
+      const result = allTodays.map((b) => ({
+        namaBand: b.namaBand,
+        jamMulai: b.jamMulai,
+        durasi: b.durasi,
+        status: b.status,
+      }));
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({ message: "Gagal mengambil data booking hari ini" });
+    }
+  });
+
   app.get("/api/admin/push/vapid-key", (_req, res) => {
     res.json({ publicKey: process.env.VAPID_PUBLIC_KEY || "" });
   });
