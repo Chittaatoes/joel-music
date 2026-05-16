@@ -148,11 +148,11 @@ function getLowestPrice(services: Service[]): string {
   return min.toLocaleString("id-ID");
 }
 
-const PILL_BG     = "rgba(255,255,255,0.94)";
-const PILL_SHADOW = "0 -1px 0 rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.06), inset 0 0 0 0.5px rgba(0,0,0,0.07)";
-const ACTIVE_BG   = "rgba(20,160,153,0.11)";
-const ICON_ACTIVE = "hsl(187,80%,38%)";
-const ICON_MUTED  = "rgba(90,105,110,0.55)";
+const PILL_BG     = "rgba(255,255,255,0.88)";
+const PILL_SHADOW = "0 -1px 0 rgba(0,0,0,0.05), 0 12px 32px rgba(0,0,0,0.12), 0 3px 8px rgba(0,0,0,0.07), inset 0 0 0 0.5px rgba(0,0,0,0.06)";
+const ACTIVE_BG   = "rgba(20,160,153,0.13)";
+const ICON_ACTIVE = "hsl(187,80%,36%)";
+const ICON_MUTED  = "rgba(90,105,110,0.50)";
 
 const USER_TABS = [
   { key: "home",    label: "Beranda", icon: Home,         path: "/" },
@@ -514,29 +514,42 @@ export default function LandingPage() {
               {priceRows.map((item, i) => (
                 <div
                   key={`${item.name}-${i}`}
-                  className={`flex items-start justify-between gap-3 px-4 py-3.5 ${
-                    i < priceRows.length - 1 ? "border-b border-border/50" : ""
-                  } ${item.promo ? "bg-[hsl(45_85%_55%/0.08)]" : ""}`}
+                  className={`relative flex items-start justify-between gap-3 px-4 py-3.5 transition-colors ${
+                    i < priceRows.length - 1 ? "border-b border-border/40" : ""
+                  } ${item.promo ? "bg-primary/[0.04]" : ""}`}
                   data-testid={`row-price-${i}`}
                 >
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-sm font-medium">{item.name}</p>
+                  {/* Promo accent — subtle left edge line */}
+                  {item.promo && (
+                    <span className="absolute left-0 inset-y-0 w-[3px] rounded-r-full bg-primary/40" />
+                  )}
+                  <div className="min-w-0 pl-0">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <p className="text-sm font-medium tracking-tight">{item.name}</p>
                       {item.promo && (
-                        <Badge className="bg-[hsl(45_85%_55%)] text-black text-[10px] px-1.5 py-0 leading-4 no-default-hover-elevate no-default-active-elevate" data-testid="badge-promo">
-                          PROMO
-                        </Badge>
+                        <span
+                          className="inline-flex items-center rounded-full px-1.5 py-px text-[9px] font-semibold uppercase tracking-wider border"
+                          style={{
+                            background: "rgba(20,160,153,0.10)",
+                            color: "hsl(187,70%,36%)",
+                            borderColor: "rgba(20,160,153,0.25)",
+                            letterSpacing: "0.06em",
+                          }}
+                          data-testid="badge-promo"
+                        >
+                          Promo
+                        </span>
                       )}
                     </div>
                     {item.note && (
-                      <p className={`text-xs mt-0.5 ${item.promo ? "text-[hsl(45_85%_65%)] font-medium" : "text-muted-foreground"}`}>{item.note}</p>
+                      <p className={`text-xs mt-0.5 ${item.promo ? "text-primary/60 font-medium" : "text-muted-foreground"}`}>{item.note}</p>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex flex-col items-end gap-0.5 shrink-0">
                     {item.originalPrice && (
-                      <span className="text-xs text-muted-foreground line-through">Rp {item.originalPrice}</span>
+                      <span className="text-[11px] text-muted-foreground/60 line-through leading-none">Rp {item.originalPrice}</span>
                     )}
-                    <span className={`text-sm font-bold ${item.promo ? "text-[hsl(45_85%_65%)]" : ""}`}>Rp {item.price}</span>
+                    <span className={`text-sm font-bold leading-none ${item.promo ? "text-primary" : ""}`}>Rp {item.price}</span>
                   </div>
                 </div>
               ))}
