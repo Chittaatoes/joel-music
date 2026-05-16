@@ -408,8 +408,10 @@ export default function LandingPage() {
             alt="Joel Music Studio"
             className="h-full w-full object-cover"
           />
-          {/* Mobile: heavier gradient at bottom for card readability */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/55 to-black/30 md:via-black/60 md:to-black/40" />
+          {/* Cinematic gradient — bottom heavy for text readability, transparent at top */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 via-[45%] to-transparent" />
+          {/* Subtle top vignette to prevent harsh bright sky */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-transparent" />
         </div>
 
         {/* Mobile hero layout — info anchored at bottom */}
