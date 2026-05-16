@@ -157,10 +157,10 @@ const ICON_MUTED  = "rgba(90,105,110,0.50)";
 const USER_TABS = [
   { key: "home",    label: "Beranda", icon: Home,         path: "/" },
   { key: "booking", label: "Booking", icon: Music,        path: "/booking" },
-  { key: "history", label: "Riwayat", icon: CalendarDays, path: "/history" },
+  { key: "food",    label: "Order",   icon: CupSoda,      path: "/food" },
 ] as const;
 
-function MobileTabBar({ active }: { active: "home" | "booking" | "history" }) {
+function MobileTabBar({ active }: { active: "home" | "booking" | "food" | "history" }) {
   const [, navigate] = useLocation();
   const [bouncing, setBouncing] = useState<string | null>(null);
 
@@ -237,10 +237,10 @@ function MobileTabBar({ active }: { active: "home" | "booking" | "history" }) {
         })}
       </div>
 
-      {/* Food / Drinks separate pill */}
+      {/* History separate pill */}
       <button
-        data-testid="tab-food"
-        onClick={() => navigate("/food")}
+        data-testid="tab-history"
+        onClick={() => navigate("/history")}
         className="flex flex-col items-center justify-center rounded-[50px] select-none shrink-0"
         style={{
           background: PILL_BG,
@@ -251,7 +251,7 @@ function MobileTabBar({ active }: { active: "home" | "booking" | "history" }) {
           width: 58,
         }}
       >
-        <CupSoda
+        <CalendarDays
           style={{
             width: 22,
             height: 22,
@@ -269,7 +269,7 @@ function MobileTabBar({ active }: { active: "home" | "booking" | "history" }) {
             lineHeight: 1,
           }}
         >
-          Order
+          Riwayat
         </span>
       </button>
     </nav>
