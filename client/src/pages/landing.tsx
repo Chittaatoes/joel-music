@@ -1,12 +1,13 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, lazy, Suspense } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import StudioGallery from "@/components/studio-gallery";
 import ParallaxHero from "@/components/parallax-hero";
+
+const StudioGallery = lazy(() => import("@/components/studio-gallery"));
 import {
   Music,
   Clock,
@@ -432,7 +433,9 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <StudioGallery onBook={() => navigate("/booking")} />
+        <Suspense fallback={<Skeleton className="h-40 rounded-2xl" />}>
+          <StudioGallery onBook={() => navigate("/booking")} />
+        </Suspense>
 
         {/* Daftar Harga */}
         <section>
