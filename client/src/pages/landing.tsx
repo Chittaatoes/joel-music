@@ -1,13 +1,11 @@
-import { useState, useCallback, useRef, lazy, Suspense } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import ParallaxHero from "@/components/parallax-hero";
-
-const StudioGallery = lazy(() => import("@/components/studio-gallery"));
+import StudioGallery from "@/components/studio-gallery";
 import {
   Music,
   Clock,
@@ -402,11 +400,75 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* ── HERO (Parallax) ── */}
-      <ParallaxHero
-        lowestPrice={lowestPrice}
-        onInfoClick={() => document.getElementById("info-section")?.scrollIntoView({ behavior: "smooth" })}
-      />
+      {/* ── HERO ── */}
+      <section className="relative overflow-hidden">
+        <div className="absolute inset-0">
+          <img
+            src={heroImage}
+            alt="Joel Music Studio"
+            className="h-full w-full object-cover"
+          />
+          {/* Cinematic gradient — bottom heavy for text readability, transparent at top */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 via-[45%] to-transparent" />
+          {/* Subtle top vignette to prevent harsh bright sky */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-transparent" />
+        </div>
+
+        {/* Mobile hero layout — info anchored at bottom */}
+        <div className="relative flex flex-col justify-end min-h-[58vh] md:hidden px-4 pb-7 pt-10">
+          <Badge variant="secondary" className="mb-3 self-start bg-white/15 text-white border-white/20 text-xs" data-testid="badge-price">
+            Mulai dari Rp {lowestPrice}
+          </Badge>
+          <h1 className="mb-2 text-[1.65rem] font-bold tracking-tight text-white leading-tight" data-testid="text-hero-title">
+            Joel Music Studio<br />& Recording
+          </h1>
+          <p className="mb-5 text-[13px] text-white/75 leading-relaxed max-w-xs">
+            Studio musik profesional di Tangerang. Rehearsal, Recording, Karaoke, dan Sewa Alat Musik.
+          </p>
+          <Button
+            size="lg"
+            className="w-full h-12 text-base font-semibold rounded-2xl shadow-lg"
+            onClick={() => navigate("/booking")}
+            data-testid="button-hero-booking"
+          >
+            Booking Sekarang
+            <ChevronRight className="ml-1 h-4 w-4" />
+          </Button>
+        </div>
+
+        {/* Desktop hero layout — original */}
+        <div className="relative hidden md:block mx-auto max-w-5xl px-4 py-20 sm:py-28">
+          <div className="max-w-xl">
+            <Badge variant="secondary" className="mb-4 bg-white/15 text-white border-white/20" data-testid="badge-price-desktop">
+              Mulai dari Rp {lowestPrice}
+            </Badge>
+            <h1 className="mb-3 text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl">
+              Joel Music Studio & Recording
+            </h1>
+            <p className="mb-6 text-base text-white/80 sm:text-lg">
+              Studio musik profesional di Tangerang. Rehearsal, Recording, Karaoke, dan Sewa Alat Musik.
+              Booking online, bayar mudah via QRIS.
+            </p>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button size="lg" onClick={() => navigate("/booking")} data-testid="button-hero-booking-desktop">
+                Booking Sekarang
+                <ChevronRight className="ml-1 h-4 w-4" />
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="bg-white/10 text-white border-white/25 backdrop-blur-sm"
+                onClick={() => {
+                  document.getElementById("info-section")?.scrollIntoView({ behavior: "smooth" });
+                }}
+                data-testid="button-hero-info"
+              >
+                Lihat Info Studio
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
 
 
       {/* ── MAIN CONTENT ── */}
@@ -433,9 +495,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <Suspense fallback={<Skeleton className="h-40 rounded-2xl" />}>
-          <StudioGallery onBook={() => navigate("/booking")} />
-        </Suspense>
+        <StudioGallery onBook={() => navigate("/booking")} />
 
         {/* Daftar Harga */}
         <section>
