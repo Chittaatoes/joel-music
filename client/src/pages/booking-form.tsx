@@ -1013,37 +1013,41 @@ export default function BookingFormPage() {
 
             {/* Terms & Conditions */}
             <div className="space-y-3 pt-1">
-              <div className="rounded-xl border border-amber-200 dark:border-amber-700/40 bg-amber-50/60 dark:bg-amber-950/20 p-4 space-y-3">
+              <div className="rounded-2xl border-2 border-amber-200 bg-[#FFFDF5] p-4 space-y-4 shadow-sm dark:border-amber-700/50 dark:bg-amber-950/20">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <ShieldCheck className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                    <span className="text-sm font-semibold text-amber-800 dark:text-amber-300">Hal Penting yang Perlu Diketahui</span>
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/50">
+                      <ShieldCheck className="h-5 w-5 text-amber-700 dark:text-amber-300" />
+                    </div>
+                    <span className="text-[15px] font-bold tracking-tight text-slate-900 dark:text-amber-100">Hal Penting yang Perlu Diketahui</span>
                   </div>
                   <button
                     type="button"
                     onClick={() => setTermsModalOpen(true)}
-                    className="text-[11px] font-medium text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-200 underline underline-offset-2 transition-colors whitespace-nowrap"
+                    className="rounded-md bg-amber-100 px-2 py-1 text-[11px] font-bold text-amber-800 transition-colors hover:bg-amber-200 dark:bg-amber-900/60 dark:text-amber-200 dark:hover:bg-amber-900 whitespace-nowrap"
                     data-testid="button-open-terms"
                   >
                     Lihat detail
                   </button>
                 </div>
-                <ul className="space-y-2">
+                <ul className="space-y-2.5">
                   {[
                     "DP hangus jika tidak hadir atau membatalkan tanpa pemberitahuan",
                     "Reschedule hanya 1×, maksimal 1 jam sebelum jadwal",
                     "Keterlambatan tidak menambah durasi sesi",
                     "Kerusakan fasilitas menjadi tanggung jawab pengguna",
                   ].map((point, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-amber-700 dark:text-amber-300/90">
-                      <span className="mt-1 h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0" />
-                      {point}
+                    <li key={i} className="flex items-start gap-2.5 rounded-xl border border-amber-100 bg-white/80 px-3 py-2.5 text-[13px] font-medium leading-relaxed text-slate-700 shadow-sm dark:border-amber-800/50 dark:bg-amber-950/30 dark:text-amber-100">
+                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-500 text-[11px] font-bold text-white dark:bg-amber-400 dark:text-amber-950">
+                        {i + 1}
+                      </span>
+                      <span>{point}</span>
                     </li>
                   ))}
                 </ul>
               </div>
 
-              <label className="flex items-start gap-3 cursor-pointer group" data-testid="label-terms">
+              <label className="flex items-start gap-3 cursor-pointer group rounded-xl border border-border bg-muted/30 p-3 transition-colors hover:bg-muted/50" data-testid="label-terms">
                 <div className="relative mt-0.5 shrink-0">
                   <input
                     type="checkbox"
@@ -1052,7 +1056,7 @@ export default function BookingFormPage() {
                     className="peer sr-only"
                     data-testid="checkbox-terms"
                   />
-                  <div className="h-5 w-5 rounded border-2 border-input bg-background flex items-center justify-center transition-colors peer-checked:bg-primary peer-checked:border-primary group-hover:border-primary/60">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-lg border-2 border-amber-400 bg-background transition-colors peer-checked:border-primary peer-checked:bg-primary group-hover:border-primary/60">
                     {termsAccepted && (
                       <svg className="h-3 w-3 text-primary-foreground" fill="none" viewBox="0 0 12 12">
                         <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -1060,12 +1064,12 @@ export default function BookingFormPage() {
                     )}
                   </div>
                 </div>
-                <span className="text-sm text-muted-foreground leading-snug select-none">
+                <span className="text-sm font-medium leading-relaxed text-foreground select-none">
                   Saya menyetujui{" "}
                   <button
                     type="button"
                     onClick={(e) => { e.preventDefault(); setTermsModalOpen(true); }}
-                    className="text-primary font-medium underline underline-offset-2 hover:text-primary/80 transition-colors"
+                    className="font-bold text-amber-700 underline underline-offset-2 transition-colors hover:text-amber-900 dark:text-amber-300 dark:hover:text-amber-100"
                     data-testid="button-terms-link"
                   >
                     Syarat &amp; Ketentuan
