@@ -121,8 +121,8 @@ export default function HistoryPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-cyan-50/40 dark:to-cyan-950/20">
-      <nav className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-md">
+    <div className="min-h-screen bg-gradient-to-b from-white via-white to-[#F0FAFB] dark:from-slate-950 dark:via-slate-950 dark:to-[#102F35]">
+      <nav className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/85 backdrop-blur-md dark:border-white/10 dark:bg-slate-950/80">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" onClick={() => navigate("/")} data-testid="button-back-home">
@@ -148,45 +148,45 @@ export default function HistoryPage() {
 
       <div className="mx-auto max-w-xl px-4 py-8 sm:py-12">
         {history.length === 0 ? (
-          <Card className="relative isolate overflow-hidden border-0 bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950 text-white shadow-2xl shadow-cyan-950/20" data-testid="empty-history">
-            <div className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-cyan-400/20 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-32 -left-16 h-64 w-64 rounded-full bg-fuchsia-500/15 blur-3xl" />
+          <Card className="relative isolate overflow-hidden border-0 bg-gradient-to-br from-[#101C22] via-[#153D45] to-[#0F6975] text-white shadow-[0_20px_50px_-20px_rgba(13,115,127,0.45)]" data-testid="empty-history">
+            <div className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-[#70E5EA]/15 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-32 -left-16 h-64 w-64 rounded-full bg-[#0E8794]/20 blur-3xl" />
             <div className="relative p-6 sm:p-8">
               <div className="mb-6 flex items-center justify-between gap-3">
-                <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/25 bg-cyan-300/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-cyan-200">
+                <div className="inline-flex items-center gap-2 rounded-full border border-[#8BEFF2]/30 bg-[#8BEFF2]/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-[#BDF7F8]">
                   <Music className="h-3.5 w-3.5" />
                   Studio siap dipakai
                 </div>
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/10 shadow-inner">
-                  <CalendarDays className="h-6 w-6 text-cyan-300" />
+                  <CalendarDays className="h-6 w-6 text-[#8BEFF2]" />
                 </div>
               </div>
 
-              <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-cyan-300/80">Booking pertama kamu</p>
+              <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-[#8BEFF2]/80">Booking pertama kamu</p>
               <h1 className="max-w-md text-2xl font-black leading-tight tracking-tight sm:text-3xl">
                 Siap bikin sesi musik yang berkesan?
               </h1>
-              <p className="mt-3 max-w-md text-sm leading-relaxed text-slate-300">
+              <p className="mt-3 max-w-md text-sm leading-relaxed text-[#D5E6E8]">
                 Pilih jadwal studio, amankan slotnya, lalu nikmati waktumu untuk latihan, rekaman, atau berkarya.
               </p>
 
               <div className="mt-7 grid grid-cols-3 divide-x divide-white/10 rounded-2xl border border-white/10 bg-white/5 py-3">
                 <div className="px-2 text-center">
-                  <CalendarDays className="mx-auto mb-1.5 h-4 w-4 text-cyan-300" />
+                  <CalendarDays className="mx-auto mb-1.5 h-4 w-4 text-[#8BEFF2]" />
                   <p className="text-[11px] font-semibold text-white">Pilih jadwal</p>
                 </div>
                 <div className="px-2 text-center">
-                  <Banknote className="mx-auto mb-1.5 h-4 w-4 text-cyan-300" />
+                  <Banknote className="mx-auto mb-1.5 h-4 w-4 text-[#8BEFF2]" />
                   <p className="text-[11px] font-semibold text-white">Bayar mudah</p>
                 </div>
                 <div className="px-2 text-center">
-                  <Music className="mx-auto mb-1.5 h-4 w-4 text-cyan-300" />
+                  <Music className="mx-auto mb-1.5 h-4 w-4 text-[#8BEFF2]" />
                   <p className="text-[11px] font-semibold text-white">Mulai berkarya</p>
                 </div>
               </div>
 
               <Button
-                className="mt-6 h-12 w-full rounded-xl bg-cyan-400 text-sm font-bold text-slate-950 shadow-lg shadow-cyan-950/30 transition-all hover:bg-cyan-300 hover:shadow-cyan-400/20"
+                className="mt-6 h-12 w-full rounded-xl bg-[#19B5C6] text-sm font-bold text-white shadow-lg shadow-[#063F49]/40 transition-all hover:bg-[#12A4B4] hover:shadow-[#70E5EA]/20"
                 onClick={() => navigate("/booking")}
                 data-testid="button-book-now"
               >
@@ -195,8 +195,8 @@ export default function HistoryPage() {
                 <span className="ml-2 text-base">→</span>
               </Button>
 
-              <div className="mt-4 flex items-center justify-center gap-2 text-[11px] text-slate-400">
-                <Clock className="h-3.5 w-3.5 text-cyan-300" />
+              <div className="mt-4 flex items-center justify-center gap-2 text-[11px] text-[#AAC3C7]">
+                <Clock className="h-3.5 w-3.5 text-[#8BEFF2]" />
                 <span>Atur sesi musikmu dalam beberapa langkah</span>
               </div>
             </div>
