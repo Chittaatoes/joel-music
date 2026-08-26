@@ -121,8 +121,8 @@ export default function HistoryPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white/90 via-white/80 to-[#F0FAFB]/80 backdrop-blur-sm dark:from-slate-950/90 dark:via-slate-950/80 dark:to-[#102F35]/80">
-      <nav className="sticky top-0 z-50 border-b border-slate-200/70 bg-white/70 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/65">
+    <div className="min-h-screen bg-[#F8FBFB] dark:bg-[#0E1E22]">
+      <nav className="sticky top-0 z-50 border-b border-slate-200/70 bg-white/90 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/85">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" onClick={() => navigate("/")} data-testid="button-back-home">
@@ -148,9 +148,9 @@ export default function HistoryPage() {
 
       <div className="mx-auto max-w-xl px-4 py-8 sm:py-12">
         {history.length === 0 ? (
-          <Card className="relative isolate overflow-hidden border border-white/15 bg-gradient-to-br from-[#101C22]/95 via-[#153D45]/92 to-[#0F6975]/92 text-white shadow-[0_20px_50px_-20px_rgba(13,115,127,0.45)] backdrop-blur-xl" data-testid="empty-history">
-            <div className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-[#70E5EA]/15 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-32 -left-16 h-64 w-64 rounded-full bg-[#0E8794]/20 blur-3xl" />
+          <Card className="relative isolate overflow-hidden border border-[#2D7882]/60 bg-gradient-to-br from-[#122229] via-[#153D45] to-[#0D6570] text-white shadow-[0_20px_50px_-20px_rgba(13,115,127,0.45)]" data-testid="empty-history">
+            <div className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-[#70E5EA]/10 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-32 -left-16 h-64 w-64 rounded-full bg-[#0E8794]/15 blur-3xl" />
             <div className="relative p-6 sm:p-8">
               <div className="mb-6 flex items-center justify-between gap-3">
                 <div className="inline-flex items-center gap-2 rounded-full border border-[#8BEFF2]/30 bg-[#8BEFF2]/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-[#BDF7F8]">
@@ -170,7 +170,7 @@ export default function HistoryPage() {
                 Pilih jadwal studio, amankan slotnya, lalu nikmati waktumu untuk latihan, rekaman, atau berkarya.
               </p>
 
-              <div className="mt-7 grid grid-cols-3 divide-x divide-white/10 rounded-2xl border border-white/10 bg-white/5 py-3">
+              <div className="mt-7 grid grid-cols-3 divide-x divide-white/15 rounded-2xl border border-white/15 bg-[#07171B]/20 py-3">
                 <div className="px-2 text-center">
                   <CalendarDays className="mx-auto mb-1.5 h-4 w-4 text-[#8BEFF2]" />
                   <p className="text-[11px] font-semibold text-white">Pilih jadwal</p>
@@ -195,7 +195,7 @@ export default function HistoryPage() {
                 <span className="ml-2 text-base">→</span>
               </Button>
 
-              <div className="mt-4 flex items-center justify-center gap-2 text-[11px] text-[#AAC3C7]">
+              <div className="mt-4 flex items-center justify-center gap-2 text-[11px] text-[#C2DADD]">
                 <Clock className="h-3.5 w-3.5 text-[#8BEFF2]" />
                 <span>Atur sesi musikmu dalam beberapa langkah</span>
               </div>
