@@ -121,8 +121,8 @@ export default function HistoryPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white via-white to-[#F0FAFB] dark:from-slate-950 dark:via-slate-950 dark:to-[#102F35]">
-      <nav className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/85 backdrop-blur-md dark:border-white/10 dark:bg-slate-950/80">
+    <div className="min-h-screen bg-gradient-to-b from-white/90 via-white/80 to-[#F0FAFB]/80 backdrop-blur-sm dark:from-slate-950/90 dark:via-slate-950/80 dark:to-[#102F35]/80">
+      <nav className="sticky top-0 z-50 border-b border-slate-200/70 bg-white/70 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/65">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" onClick={() => navigate("/")} data-testid="button-back-home">
@@ -148,7 +148,7 @@ export default function HistoryPage() {
 
       <div className="mx-auto max-w-xl px-4 py-8 sm:py-12">
         {history.length === 0 ? (
-          <Card className="relative isolate overflow-hidden border-0 bg-gradient-to-br from-[#101C22] via-[#153D45] to-[#0F6975] text-white shadow-[0_20px_50px_-20px_rgba(13,115,127,0.45)]" data-testid="empty-history">
+          <Card className="relative isolate overflow-hidden border border-white/15 bg-gradient-to-br from-[#101C22]/95 via-[#153D45]/92 to-[#0F6975]/92 text-white shadow-[0_20px_50px_-20px_rgba(13,115,127,0.45)] backdrop-blur-xl" data-testid="empty-history">
             <div className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-[#70E5EA]/15 blur-3xl" />
             <div className="pointer-events-none absolute -bottom-32 -left-16 h-64 w-64 rounded-full bg-[#0E8794]/20 blur-3xl" />
             <div className="relative p-6 sm:p-8">
