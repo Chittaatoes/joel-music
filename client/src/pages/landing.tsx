@@ -746,7 +746,7 @@ export default function LandingPage() {
             <p className="text-xs text-muted-foreground" data-testid="text-footer">
               &copy; {new Date().getFullYear()} Joel Music Studio. All rights reserved.
             </p>
-            <Button variant="ghost" size="sm" className="text-xs text-muted-foreground h-auto py-1 px-2" onClick={() => navigate("/admin")} data-testid="button-footer-admin">
+            <Button variant="ghost" size="sm" className="hidden text-xs text-muted-foreground h-auto py-1 px-2" onClick={() => navigate("/admin")} data-testid="button-footer-admin">
               <ShieldCheck className="mr-1 h-3 w-3" />
               Admin
             </Button>
