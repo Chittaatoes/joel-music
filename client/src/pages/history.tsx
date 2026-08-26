@@ -121,7 +121,7 @@ export default function HistoryPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-cyan-50/40 dark:to-cyan-950/20">
       <nav className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
           <div className="flex items-center gap-2">
@@ -146,16 +146,60 @@ export default function HistoryPage() {
         </div>
       </nav>
 
-      <div className="mx-auto max-w-2xl px-4 py-6 space-y-4">
+      <div className="mx-auto max-w-xl px-4 py-8 sm:py-12">
         {history.length === 0 ? (
-          <Card className="flex flex-col items-center justify-center p-12 text-center" data-testid="empty-history">
-            <CalendarDays className="mb-3 h-10 w-10 text-muted-foreground" />
-            <p className="font-medium text-sm">Belum ada riwayat booking</p>
-            <p className="text-xs text-muted-foreground mt-1">Riwayat booking kamu akan muncul di sini setelah melakukan booking.</p>
-            <Button className="mt-4" size="sm" onClick={() => navigate("/booking")} data-testid="button-book-now">
-              <Music className="mr-2 h-4 w-4" />
-              Booking Sekarang
-            </Button>
+          <Card className="relative isolate overflow-hidden border-0 bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950 text-white shadow-2xl shadow-cyan-950/20" data-testid="empty-history">
+            <div className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-cyan-400/20 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-32 -left-16 h-64 w-64 rounded-full bg-fuchsia-500/15 blur-3xl" />
+            <div className="relative p-6 sm:p-8">
+              <div className="mb-6 flex items-center justify-between gap-3">
+                <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/25 bg-cyan-300/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-cyan-200">
+                  <Music className="h-3.5 w-3.5" />
+                  Studio siap dipakai
+                </div>
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/10 shadow-inner">
+                  <CalendarDays className="h-6 w-6 text-cyan-300" />
+                </div>
+              </div>
+
+              <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-cyan-300/80">Booking pertama kamu</p>
+              <h1 className="max-w-md text-2xl font-black leading-tight tracking-tight sm:text-3xl">
+                Siap bikin sesi musik yang berkesan?
+              </h1>
+              <p className="mt-3 max-w-md text-sm leading-relaxed text-slate-300">
+                Pilih jadwal studio, amankan slotnya, lalu nikmati waktumu untuk latihan, rekaman, atau berkarya.
+              </p>
+
+              <div className="mt-7 grid grid-cols-3 divide-x divide-white/10 rounded-2xl border border-white/10 bg-white/5 py-3">
+                <div className="px-2 text-center">
+                  <CalendarDays className="mx-auto mb-1.5 h-4 w-4 text-cyan-300" />
+                  <p className="text-[11px] font-semibold text-white">Pilih jadwal</p>
+                </div>
+                <div className="px-2 text-center">
+                  <Banknote className="mx-auto mb-1.5 h-4 w-4 text-cyan-300" />
+                  <p className="text-[11px] font-semibold text-white">Bayar mudah</p>
+                </div>
+                <div className="px-2 text-center">
+                  <Music className="mx-auto mb-1.5 h-4 w-4 text-cyan-300" />
+                  <p className="text-[11px] font-semibold text-white">Mulai berkarya</p>
+                </div>
+              </div>
+
+              <Button
+                className="mt-6 h-12 w-full rounded-xl bg-cyan-400 text-sm font-bold text-slate-950 shadow-lg shadow-cyan-950/30 transition-all hover:bg-cyan-300 hover:shadow-cyan-400/20"
+                onClick={() => navigate("/booking")}
+                data-testid="button-book-now"
+              >
+                <Music className="mr-2 h-4 w-4" />
+                Booking Sekarang
+                <span className="ml-2 text-base">→</span>
+              </Button>
+
+              <div className="mt-4 flex items-center justify-center gap-2 text-[11px] text-slate-400">
+                <Clock className="h-3.5 w-3.5 text-cyan-300" />
+                <span>Atur sesi musikmu dalam beberapa langkah</span>
+              </div>
+            </div>
           </Card>
         ) : (
           history.map((b, idx) => {
