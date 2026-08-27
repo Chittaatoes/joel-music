@@ -268,7 +268,7 @@ export default function StudioGallery({ onBook }: Props) {
                     data-testid="button-gallery-booking"
                   >
                     <Guitar className="mr-1.5 h-3.5 w-3.5" />
-                    Booking Sekarang
+                    Jadwalkan Sesi Kamu
                   </Button>
                 </div>
               </div>
@@ -502,7 +502,7 @@ function DesktopCard({
               }}
             >
               <Guitar className="mr-1.5 h-3 w-3" />
-              Booking Sekarang
+              Jadwalkan Sesi Kamu
             </Button>
             <LikeButton
               liked={liked}
