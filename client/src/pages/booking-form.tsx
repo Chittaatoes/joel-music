@@ -387,7 +387,7 @@ export default function BookingFormPage() {
     }
     message += `Status : \u23F3 Menunggu Konfirmasi Admin\n\n`;
     message += `${SEP}\n\n`;
-    message += `\u{1F64F} Terima kasih telah booking di *Joel Music Studio*`;
+    message += `Terima kasih\u{1F64F}`;
 
     const encoded = encodeURIComponent(message);
     return `https://wa.me/${ADMIN_WA}?text=${encoded}`;
