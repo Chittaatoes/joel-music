@@ -948,7 +948,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         layananLines = `\u23F0 Jam: ${jamStr}\n\u{1F3B8} Layanan: ${layananStr}${alatLine}\n`;
       }
 
-      const message = `\u{1F3B5} JOEL MUSIC STUDIO\n\nHalo ${booking.namaBand} \u{1F44B}\n\nBooking kamu sudah dikonfirmasi \u2705\n\n\u{1F4CC} Booking ID: ${booking.bookingId || booking.id}\n\u{1F5D3}\uFE0F Tanggal: ${tanggalStr}\n${layananLines}\n\u{1F4B0} Total: Rp ${correctTotal.toLocaleString("id-ID")}\nMetode Pembayaran: ${metodeStr}\n\nSilakan datang 10 menit sebelum jadwal \u{1F64F}\nTerima kasih!`;
+      const message = `\u{1F3B5} JOEL MUSIC STUDIO\n\nHalo ${booking.namaBand} \u{1F44B}\n\nBooking kamu sudah dikonfirmasi \u2705\n\n\u{1F4CC} Booking ID: ${booking.bookingId || booking.id}\n\u{1F5D3}\uFE0F Tanggal: ${tanggalStr}\n${layananLines}\n\u{1F4B0} Total: Rp ${correctTotal.toLocaleString("id-ID")}\nMetode Pembayaran: ${metodeStr}\n\n*WIFI : JOEL MUSIC STUDIO*\n*PW:bayardulu*\n\nSilakan datang 10 menit sebelum jadwal \n\nTerima kasih!`;
       const whatsappUrl = `https://wa.me/${waNumber}?text=${encodeURIComponent(message)}`;
       res.json({ success: true, whatsappUrl });
     } catch (error) {
