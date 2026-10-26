@@ -45,6 +45,7 @@ import { id as idLocale } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Booking, DailyCost } from "@shared/schema";
+import { getNotifiableUnconfirmedBookings } from "@/lib/booking-notifications";
 
 const LAYANAN_MAP: Record<string, string> = {
   rehearsal: "Rehearsal",
@@ -244,7 +245,7 @@ export default function AdminDashboard() {
   const totalCost = costs.reduce((sum, c) => sum + c.cost, 0);
   const profit = pendapatanTotal - totalCost;
 
-  const unconfirmedCount = allBookings.filter((b) => b.status === "pending").length;
+  const unconfirmedCount = getNotifiableUnconfirmedBookings(allBookings).length;
 
   const isSaving = addCostMutation.isPending || updateCostMutation.isPending;
 
