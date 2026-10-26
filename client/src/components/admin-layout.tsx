@@ -19,6 +19,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { Skeleton } from "@/components/ui/skeleton";
 import { LayoutDashboard, CreditCard, LogOut, Settings, Images, Bell, BellOff } from "lucide-react";
 import { usePushNotification } from "@/hooks/use-push-notification";
+import { getNotifiableUnconfirmedBookings } from "@/lib/booking-notifications";
 import { useToast } from "@/hooks/use-toast";
 import type { Booking } from "@shared/schema";
 const logoImage = "/images/logo.png";
@@ -203,7 +204,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     refetchInterval: 60000,
   });
 
-  const pendingCount = allBookings.filter((b) => b.status === "pending").length;
+  const pendingCount = getNotifiableUnconfirmedBookings(allBookings).length;
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
